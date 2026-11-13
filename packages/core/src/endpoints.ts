@@ -18,7 +18,7 @@ export interface CargaContext {
 
 export interface EndpointDef<Q extends z.ZodObject = z.ZodObject, R extends z.ZodType = z.ZodType> {
   id: string;
-  tag: "Sistema" | "Investidor" | "Carteira" | "Extratos" | "Proventos" | "Início" | "Mercado" | "Renda Fixa" | "Transferência";
+  tag: "Sistema" | "Investidor" | "Carteira" | "Extratos" | "Proventos" | "Início" | "Mercado" | "Renda Fixa" | "Transferência" | "Apoio";
   summary: string;
   description?: string;
   /** Caminho na API da B3. `{param}` é substituído pelo parâmetro de mesmo nome. */
@@ -534,6 +534,41 @@ export const endpoints = {
     response: S.NaoMapeado,
     status: "campos-pendentes",
     notes: ["Observado status 200 na navegação ao vivo do portal."],
+  }),
+
+  // ---------- tabelas de apoio ----------
+
+  instituicoes: def({
+    id: "instituicoes",
+    tag: "Investidor",
+    summary: "Tabela de instituições financeiras habilitadas",
+    b3Path: "/negocio-investidor/api/investidor/v1/instituicoes",
+    route: "/v1/investidor/instituicoes",
+    query: z.object({}),
+    response: S.ListaNaoMapeada,
+    status: "campos-pendentes",
+  }),
+
+  tiposEventos: def({
+    id: "tiposEventos",
+    tag: "Proventos",
+    summary: "Tabela de tipos de eventos provisionados",
+    b3Path: `${EP}/v1.1/tipos-eventos`,
+    route: "/v1/proventos/tipos-eventos",
+    query: z.object({}),
+    response: S.ListaNaoMapeada,
+    status: "campos-pendentes",
+  }),
+
+  tiposMovimentacoes: def({
+    id: "tiposMovimentacoes",
+    tag: "Investidor",
+    summary: "Tabela de tipos de movimentações de extrato",
+    b3Path: "/negocio-investidor/api/investidor/v1/tipos-movimentacoes",
+    route: "/v1/investidor/tipos-movimentacoes",
+    query: z.object({}),
+    response: S.ListaNaoMapeada,
+    status: "campos-pendentes",
   }),
 } as const;
 

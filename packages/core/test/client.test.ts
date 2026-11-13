@@ -224,6 +224,38 @@ describe("rotas", () => {
     expect(chamadasFeitas[0]).toContain("pagina=3");
     expect(chamadasFeitas[0]).toContain("qtdRegistros=20");
   });
+
+  it("rotas de tabelas de apoio chamam os caminhos esperados", async () => {
+    const chamadasFeitas: string[] = [];
+    const { f } = fakeFetch({
+      "/oauth2/v2.0/token": tokenOk,
+      "/investidor/v1/instituicoes": (url) => {
+        chamadasFeitas.push(url.pathname);
+        return json([{ id: "banco-1" }]);
+      },
+      "/v1.1/tipos-eventos": (url) => {
+        chamadasFeitas.push(url.pathname);
+        return json([{ tipo: "dividendo" }]);
+      },
+      "/investidor/v1/tipos-movimentacoes": (url) => {
+        chamadasFeitas.push(url.pathname);
+        return json([{ tipo: "transferencia" }]);
+      },
+    });
+    const cliente = new B3Client({ store: new MemoryTokenStore({ refresh_token: "x" }), fetch: f });
+
+    const listaInstituicoes = await cliente.call("instituicoes");
+    expect(listaInstituicoes).toEqual([{ id: "banco-1" }]);
+    expect(chamadasFeitas[0]).toContain("/investidor/v1/instituicoes");
+
+    const listaEventos = await cliente.call("tiposEventos");
+    expect(listaEventos).toEqual([{ tipo: "dividendo" }]);
+    expect(chamadasFeitas[1]).toContain("/v1.1/tipos-eventos");
+
+    const listaMovimentacoes = await cliente.call("tiposMovimentacoes");
+    expect(listaMovimentacoes).toEqual([{ tipo: "transferencia" }]);
+    expect(chamadasFeitas[2]).toContain("/investidor/v1/tipos-movimentacoes");
+  });
 });
 
 describe("shape e diff", () => {
