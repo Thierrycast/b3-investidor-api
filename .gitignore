@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+# sessões e capturas nunca entram no repo
+session*.json
+captures/
+.b3/
+.codegraph/
+.agents/

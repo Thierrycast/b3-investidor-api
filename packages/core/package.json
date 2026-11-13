@@ -1,0 +1,13 @@
+{
+  "name": "@b3-investidor/core",
+  "version": "0.1.0",
+  "description": "Cliente tipado (não oficial) da Área do Investidor da B3: autenticação Azure AD B2C, rotas de dados e schemas.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  }
+}

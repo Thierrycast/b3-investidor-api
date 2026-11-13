@@ -1,0 +1,316 @@
+import { z } from "zod";
+import * as S from "./schemas";
+
+/**
+ * Registro único das rotas da B3. O cliente, o servidor HTTP (Swagger), a CLI e a
+ * documentação saem daqui. Para mapear uma rota nova, acrescente uma entrada.
+ */
+export type EndpointStatus =
+  /** Rota e campos confirmados com dados reais. */
+  | "confirmado"
+  /** Rota responde, mas a conta usada no mapeamento não tinha dados: campos dos itens desconhecidos. */
+  | "campos-pendentes";
+
+export interface CargaContext {
+  /** dataGeral da última carga (AAAA-MM-DD). */
+  carga: string;
+}
+
+export interface EndpointDef<Q extends z.ZodObject = z.ZodObject, R extends z.ZodType = z.ZodType> {
+  id: string;
+  tag: "Sistema" | "Investidor" | "Carteira" | "Extratos" | "Proventos" | "Início";
+  summary: string;
+  description?: string;
+  /** Caminho na API da B3. `{param}` é substituído pelo parâmetro de mesmo nome. */
+  b3Path: string;
+  /** Caminho na API HTTP deste projeto. */
+  route: string;
+  query: Q;
+  response: R;
+  status: EndpointStatus;
+  /** Como a rota pagina: `query` (?pagina=) ou `path` (/{pagina}). */
+  pagination?: "query" | "path";
+  /** Parâmetros que a B3 recusa se forem maiores que a data da última carga: são limitados a ela. */
+  clampToCarga?: readonly string[];
+  /** Valores padrão calculados a partir da data da última carga. */
+  defaults?: (ctx: CargaContext) => Record<string, unknown>;
+  /** Detalhes observados que viram documentação. */
+  notes?: readonly string[];
+}
+
+const def = <Q extends z.ZodObject, R extends z.ZodType>(d: EndpointDef<Q, R>) => d;
+
+export const daysBefore = (isoDate: string, days: number) =>
+  new Date(Date.parse(`${isoDate}T12:00:00Z`) - days * 86_400_000).toISOString().slice(0, 10);
+const mesAno = ({ carga }: CargaContext) => ({ mes: Number(carga.slice(5, 7)), ano: Number(carga.slice(0, 4)) });
+
+const EP = "/negocio-eventosprovisionados/api/extrato-eventos-provisionados";
+
+export const endpoints = {
+  ultimaCarga: def({
+    id: "ultimaCarga",
+    tag: "Sistema",
+    summary: "Datas da última carga de dados",
+    description: "Até quando os dados da B3 estão atualizados, por mercado. Normalmente D-1 útil.",
+    b3Path: "/negocio-sistema/api/sistema/v1/carga/ultima-execucao",
+    route: "/v1/sistema/ultima-carga",
+    query: z.object({}),
+    response: S.UltimaCarga,
+    status: "confirmado",
+  }),
+
+  posicao: def({
+    id: "posicao",
+    tag: "Carteira",
+    summary: "Posição da carteira numa data",
+    description: "Posição agrupada por categoria/tipo de produto, com os ativos de cada grupo.",
+    b3Path: "/negocio-posicao/api/extrato-posicao/v2/posicao",
+    route: "/v1/posicao",
+    query: z.object({
+      data: S.DataParam.optional().describe("Data da posição (AAAA-MM-DD). Padrão: data da última carga."),
+      pagina: S.PaginaParam,
+    }),
+    response: S.PosicaoResposta,
+    status: "confirmado",
+    pagination: "query",
+    clampToCarga: ["data"],
+    defaults: ({ carga }) => ({ data: carga }),
+    notes: ["Data posterior à última carga → 400 \"A data informada é maior que a data de carga do sistema!\". O cliente limita sozinho."],
+  }),
+
+  movimentacao: def({
+    id: "movimentacao",
+    tag: "Extratos",
+    summary: "Extrato de movimentação",
+    description: "Créditos e débitos (rendimentos, resgates, vencimentos, transferências...) agrupados por dia.",
+    b3Path: "/negocio-movimentacao/api/extrato-movimentacao/v2/movimentacao",
+    route: "/v1/movimentacao",
+    query: z.object({
+      dataInicio: S.DataParam.optional().describe("Início (AAAA-MM-DD). Padrão: 30 dias antes de dataFim."),
+      dataFim: S.DataParam.optional().describe("Fim (AAAA-MM-DD). Padrão: data da última carga."),
+      pagina: S.PaginaParam,
+    }),
+    response: S.MovimentacaoResposta,
+    status: "confirmado",
+    pagination: "query",
+    clampToCarga: ["dataFim"],
+    defaults: ({ carga }) => ({ dataFim: carga, dataInicio: daysBefore(carga, 30) }),
+    notes: ["Janelas de até 10 anos aceitas numa consulta (testado).", "dataFim posterior à última carga → 400."],
+  }),
+
+  movimentacaoUltimas: def({
+    id: "movimentacaoUltimas",
+    tag: "Início",
+    summary: "Últimas movimentações (card da página inicial)",
+    b3Path: "/negocio-movimentacao/api/extrato-movimentacao/v2/movimentacao/ultimas",
+    route: "/v1/movimentacao/ultimas",
+    query: z.object({}),
+    response: S.UltimasMovimentacoes,
+    status: "confirmado",
+  }),
+
+  negociacao: def({
+    id: "negociacao",
+    tag: "Extratos",
+    summary: "Extrato de negociação de ativos (compras e vendas na bolsa)",
+    b3Path: "/negocio-negociacaoativos/api/extrato-negociacao-ativos/v1/negociacao-ativos/{pagina}",
+    route: "/v1/negociacao",
+    query: z.object({
+      dataInicio: S.DataParam.optional().describe("Início (AAAA-MM-DD). Padrão: 30 dias antes de dataFim."),
+      dataFim: S.DataParam.optional().describe("Fim (AAAA-MM-DD). Padrão: data da última carga."),
+      pagina: S.PaginaParam,
+    }),
+    response: S.NegociacaoResposta,
+    status: "campos-pendentes",
+    pagination: "path",
+    defaults: ({ carga }) => ({ dataFim: carga, dataInicio: daysBefore(carga, 30) }),
+    notes: ["A página vai no caminho, não na query.", "Aceita dataFim posterior à carga e dataInicio desde 2000 (testado)."],
+  }),
+
+  proventos: def({
+    id: "proventos",
+    tag: "Proventos",
+    summary: "Proventos (dividendos, JCP, rendimentos) de um mês",
+    b3Path: `${EP}/v1/proventos/investidor`,
+    route: "/v1/proventos",
+    query: z.object({ mes: S.MesParam.optional(), ano: S.AnoParam.optional() }),
+    response: S.ListaNaoMapeada,
+    status: "campos-pendentes",
+    defaults: mesAno,
+  }),
+
+  proventosResumo: def({
+    id: "proventosResumo",
+    tag: "Proventos",
+    summary: "Resumo de proventos do mês",
+    b3Path: `${EP}/v1/proventos/investidor/resumo`,
+    route: "/v1/proventos/resumo",
+    query: z.object({
+      agrupamento: z.coerce.number().int().default(1).describe("Só 1 é aceito (2 e 3 → 400)"),
+      mes: S.MesParam.optional(),
+      ano: S.AnoParam.optional(),
+    }),
+    response: S.ProventosResumo,
+    status: "campos-pendentes",
+    defaults: mesAno,
+  }),
+
+  proventosMeses: def({
+    id: "proventosMeses",
+    tag: "Proventos",
+    summary: "Meses disponíveis para consulta de proventos",
+    b3Path: `${EP}/v1/proventos/investidor/meses`,
+    route: "/v1/proventos/meses",
+    query: z.object({}),
+    response: S.ProventosMeses,
+    status: "confirmado",
+  }),
+
+  proventosAnos: def({
+    id: "proventosAnos",
+    tag: "Proventos",
+    summary: "Anos com proventos",
+    b3Path: `${EP}/v1/proventos/investidor/anos`,
+    route: "/v1/proventos/anos",
+    query: z.object({}),
+    response: z.unknown(),
+    status: "campos-pendentes",
+    notes: ["Responde 204 (sem corpo) quando não há proventos."],
+  }),
+
+  proventosTipos: def({
+    id: "proventosTipos",
+    tag: "Proventos",
+    summary: "Tipos de investimento com proventos no mês",
+    b3Path: `${EP}/v1/proventos/investidor/tipos-investimentos`,
+    route: "/v1/proventos/tipos-investimentos",
+    query: z.object({ mes: S.MesParam.optional(), ano: S.AnoParam.optional() }),
+    response: S.ListaNaoMapeada,
+    status: "campos-pendentes",
+    defaults: mesAno,
+  }),
+
+  proventosRecebidosResumo: def({
+    id: "proventosRecebidosResumo",
+    tag: "Proventos",
+    summary: "Total de proventos recebidos no mês mais recente",
+    b3Path: `${EP}/v1/recebidos/resumo-proventos`,
+    route: "/v1/proventos/recebidos/resumo",
+    query: z.object({}),
+    response: S.ProventosRecebidosResumo,
+    status: "confirmado",
+  }),
+
+  proventosResumoMensal: def({
+    id: "proventosResumoMensal",
+    tag: "Início",
+    summary: "Resumo mensal de proventos recebidos (card da página inicial)",
+    b3Path: `${EP}/v1/resumo-mensal/recebidos`,
+    route: "/v1/proventos/recebidos/mensal",
+    query: z.object({ dc: S.DataParam.optional().describe("Data de corte. Padrão: data da última carga.") }),
+    response: S.ResumoMensalRecebidos,
+    status: "campos-pendentes",
+    defaults: ({ carga }) => ({ dc: carga }),
+  }),
+
+  carteiraResumo: def({
+    id: "carteiraResumo",
+    tag: "Início",
+    summary: "Resumo da carteira (card da página inicial)",
+    b3Path: "/negocio-home/api/home/v1/minha-carteira/resumo",
+    route: "/v1/carteira/resumo",
+    query: z.object({}),
+    response: S.CarteiraResumo,
+    status: "confirmado",
+  }),
+
+  carteiraTotalAcumulado: def({
+    id: "carteiraTotalAcumulado",
+    tag: "Início",
+    summary: "Total acumulado da carteira",
+    b3Path: "/negocio-home/api/home/v1/minha-carteira/total-acumulado",
+    route: "/v1/carteira/total-acumulado",
+    query: z.object({}),
+    response: S.CarteiraTotalAcumulado,
+    status: "confirmado",
+  }),
+
+  carteiraInstituicoes: def({
+    id: "carteiraInstituicoes",
+    tag: "Início",
+    summary: "Carteira por instituição",
+    b3Path: "/negocio-home/api/home/v1/minha-carteira/instituicao",
+    route: "/v1/carteira/instituicoes",
+    query: z.object({}),
+    response: S.CarteiraInstituicoes,
+    status: "confirmado",
+  }),
+
+  evolucaoPatrimonial: def({
+    id: "evolucaoPatrimonial",
+    tag: "Início",
+    summary: "Evolução patrimonial",
+    b3Path: "/negocio-home/api/home/v2/evolucao-patrimonial",
+    route: "/v1/carteira/evolucao",
+    query: z.object({
+      ap: z.coerce.number().int().optional().describe("Período (código numérico observado na home; semântica a confirmar)"),
+      dc: S.DataParam.optional().describe("Data de corte. Padrão: data da última carga."),
+    }),
+    response: S.EvolucaoPatrimonial,
+    status: "confirmado",
+    defaults: ({ carga }) => ({ dc: carga }),
+  }),
+
+  ultimasNegociacoes: def({
+    id: "ultimasNegociacoes",
+    tag: "Início",
+    summary: "Últimas negociações (card da página inicial)",
+    b3Path: "/negocio-home/api/home/v2/negociacao/ultimas-negociacoes",
+    route: "/v1/negociacao/ultimas",
+    query: z.object({ dataFim: S.DataParam.optional() }),
+    response: S.UltimasNegociacoes,
+    status: "campos-pendentes",
+    defaults: ({ carga }) => ({ dataFim: carga }),
+  }),
+
+  cadastro: def({
+    id: "cadastro",
+    tag: "Investidor",
+    summary: "Dados cadastrais do investidor",
+    b3Path: "/negocio-investidor/api/investidor/v1.3/cadastro",
+    route: "/v1/investidor/cadastro",
+    query: z.object({}),
+    response: S.Cadastro,
+    status: "confirmado",
+    notes: ["Contém dados pessoais. Nunca logue nem cole a resposta em issues."],
+  }),
+
+  perfil: def({
+    id: "perfil",
+    tag: "Investidor",
+    summary: "Perfil do investidor",
+    b3Path: "/negocio-investidor/api/investidor/v1/perfil",
+    route: "/v1/investidor/perfil",
+    query: z.object({}),
+    response: S.Perfil,
+    status: "confirmado",
+  }),
+
+  menusDisponiveis: def({
+    id: "menusDisponiveis",
+    tag: "Investidor",
+    summary: "Funcionalidades habilitadas para a conta",
+    description: "Mapa booleano de recursos (informe de rendimentos, calculadora de IR, transferência de ativos...).",
+    b3Path: "/negocio-investidor/api/investidor/v3/menus-disponiveis",
+    route: "/v1/investidor/menus",
+    query: z.object({}),
+    response: z.record(z.string(), z.boolean()),
+    status: "confirmado",
+  }),
+} as const;
+
+export type EndpointId = keyof typeof endpoints;
+export type EndpointQuery<K extends EndpointId> = z.input<(typeof endpoints)[K]["query"]>;
+export type EndpointResult<K extends EndpointId> = z.output<(typeof endpoints)[K]["response"]>;
+
+export const endpointList = Object.values(endpoints) as EndpointDef[];

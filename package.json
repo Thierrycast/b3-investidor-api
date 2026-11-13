@@ -1,0 +1,26 @@
+{
+  "name": "b3-investidor-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cliente, API HTTP com Swagger e ferramentas de descoberta para a Área do Investidor da B3 (não oficial).",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "b3": "tsx --env-file-if-exists=.env packages/cli/src/index.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "docs:gen": "tsx scripts/gen-docs.ts",
+    "docs:check": "tsx scripts/gen-docs.ts --check"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0",
+    "zod": "^4.6.7",
+    "@b3-investidor/core": "workspace:*"
+  }
+}

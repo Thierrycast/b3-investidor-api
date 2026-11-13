@@ -1,0 +1,14 @@
+{
+  "name": "@b3-investidor/cli",
+  "version": "0.1.0",
+  "description": "CLI `b3`: login, renovação, teste e descoberta de rotas da Área do Investidor da B3.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "b3": "./src/index.ts"
+  },
+  "dependencies": {
+    "@b3-investidor/core": "workspace:*",
+    "@b3-investidor/server": "workspace:*"
+  }
+}
