@@ -17,7 +17,8 @@ Estado em 2026-11-13. Ajude onde puder: veja [CONTRIBUTING.md](CONTRIBUTING.md).
   - CAPTCHA ou tela desconhecida → janela para a pessoa concluir. **Nunca contorna desafio.**
 - [x] Login automático no servidor: sessão vencida → login sozinho; código do e-mail via `POST /v1/login/codigo` (testes sintéticos; falta teste ao vivo)
 - [ ] `b3 login --push` contra um servidor remoto (implementado, não testado de ponta a ponta)
-- [ ] **`b3 discover`**: abre o portal num navegador monitorado e registra rotas, nomes de parâmetros e árvores de tipos enquanto a pessoa navega.
+- [x] **`b3 discover`**: abre o portal no Chrome da pessoa (perfil próprio, CDP) e registra rotas, nomes de parâmetros e árvores de tipos enquanto ela navega (testes do modelo de rota; falta rodada ao vivo).
+- [ ] **Mapear os micro-frontends** com o `discover`: relatórios, informe de rendimentos, renda fixa, calculadora de IR etc.
 - [ ] Build publicável (`dist/` + tipos) e publicação no npm.
 
 ## Campos pendentes 🟡 (precisam de alguém com o ativo)

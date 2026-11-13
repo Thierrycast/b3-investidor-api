@@ -286,6 +286,7 @@ async function attempt(headless: boolean, o: LoginOptions): Promise<B3Session> {
 }
 
 export * from "./credentials";
+export { discover, templatePath, matchRegistry, type DiscoverOptions, type DiscoveredRoute } from "./discover";
 
 /** Faz login e devolve a sessão. Não grava nada: quem chama decide onde guardar. */
 export async function login(o: LoginOptions = {}): Promise<B3Session> {

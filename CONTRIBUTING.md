@@ -33,7 +33,21 @@ Se puder, diga também o que cada campo significa: compare com o que a tela do p
 
 O portal tem mais de 20 micro-frontends (lista em [docs/descobertas.md](docs/descobertas.md)). Várias telas ainda não foram mapeadas (relatórios, informe de rendimentos, renda fixa, calculadora de IR...).
 
-Com o portal aberto no Chrome, use o DevTools (F12 → Network → filtro `negocio-`) e anote:
+O jeito mais fácil:
+
+```bash
+pnpm b3 discover
+```
+
+Ele abre o seu Chrome com um perfil próprio, você faz login e navega pelas telas que quer mapear, e no fim fecha o Chrome.
+Cada rota da API aparece no terminal (✅ já conhecida, 🆕 nova), e o arquivo `captures/discover-<data>.json`, ignorado pelo git, guarda para cada rota:
+
+- método e rota como modelo: números, ids, datas e tickers viram `{n}`, `{id}`, `{data}` e `{ticker}`;
+- **nomes** dos parâmetros, status HTTP e árvore de tipos.
+
+Nenhum valor é gravado. Mesmo assim, revise o arquivo antes de colar as rotas 🆕 numa issue.
+
+Sem o `discover`, dá para fazer à mão. Com o portal aberto no Chrome, use o DevTools (F12 → Network → filtro `negocio-`) e anote:
 - método e caminho (`/negocio-xxx/api/...`);
 - **nomes** e formato dos parâmetros (`dataInicio=AAAA-MM-DD`), não os valores;
 - headers além de `Authorization`, se houver.
@@ -45,8 +59,6 @@ const b3 = new B3Client();
 const { body } = await b3.raw("/negocio-xxx/api/...", { param: "..." });
 console.log(JSON.stringify(shape(body), null, 2));
 ```
-
-(O comando `b3 discover`, que automatiza isso, está no [ROADMAP](ROADMAP.md).)
 
 ## 3. Mandar código
 

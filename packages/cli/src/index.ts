@@ -30,6 +30,9 @@ Uso: b3 <comando> [opções]
   probe                   Teste rápido: renova, chama última carga e posição; só status e tipos.
   shapes [ids...] [--all] Árvore de TIPOS das respostas (nunca valores) e campos fora do schema.
                           Seguro para colar em issues. Sem ids: rotas confirmadas.
+  discover                Abre o portal no seu Chrome (perfil próprio) e mapeia as rotas da API enquanto
+                          você navega: rota, nomes de parâmetros, status e tipos (nunca valores).
+      --out <arquivo>     padrão: captures/discover-<data>.json    --chrome <caminho>   --port <n> (9333)
   endpoints               Lista as rotas conhecidas e o status de mapeamento.
   serve                   Sobe a API HTTP com Swagger em /docs (exige B3_API_KEY).
 
@@ -50,6 +53,9 @@ const { values, positionals } = parseArgs({
     headless: { type: "boolean", default: false },
     push: { type: "string" },
     debug: { type: "string" },
+    out: { type: "string" },
+    chrome: { type: "string" },
+    port: { type: "string" },
   },
 });
 
@@ -112,6 +118,23 @@ async function main() {
         return out({ origem: c.origem, cpf: Boolean(c.cpf), senha: Boolean(c.senha), cofre: m.vaultName() });
       }
       throw new Error("Use: b3 credenciais salvar | status | apagar");
+    }
+
+    case "discover": {
+      const { discover } = await import("@b3-investidor/login");
+      const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
+      const outFile = resolve(values.out ?? `captures/discover-${stamp}.json`);
+      const list = await discover({
+        out: outFile,
+        chromePath: values.chrome,
+        port: values.port ? Number(values.port) : undefined,
+        onStatus: (m) => console.error(`· ${m}`),
+        onRoute: (r) => console.error(`${r.conhecida ? `✅ ${r.conhecida.padEnd(24)}` : "🆕 nova".padEnd(27)} ${r.metodo} ${r.rota}${r.parametros.length ? ` ?${r.parametros.join("&")}` : ""}`),
+      });
+      const novas = list.filter((r) => !r.conhecida);
+      console.error(`\n${list.length} rota(s) vistas, ${novas.length} fora do registro. Arquivo: ${outFile}`);
+      console.error("Ele traz só nomes e tipos. Revise antes de colar numa issue.");
+      return;
     }
 
     case "refresh": {
