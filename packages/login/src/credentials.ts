@@ -119,7 +119,7 @@ export function resolveCredentials(): { cpf?: string; senha?: string; origem: "a
   return { cpf: cpf || undefined, senha: senha || undefined, origem: "nenhuma" };
 }
 
-/** Lê do terminal sem eco. Só funciona num terminal interativo. */
+/** Lê do terminal mostrando `*` no lugar de cada caractere. Só funciona num terminal interativo. */
 export async function promptHidden(question: string): Promise<string> {
   const { stdin, stderr } = process;
   if (!stdin.isTTY) throw new Error("Precisa de um terminal interativo para digitar sem eco.");
@@ -140,8 +140,13 @@ export async function promptHidden(question: string): Promise<string> {
       for (const ch of chunk) {
         if (ch === "\r" || ch === "\n") return done();
         if (ch === "\u0003") return done(new Error("Cancelado."));
-        if (ch === "\u007f" || ch === "\b") buf = buf.slice(0, -1);
-        else if (ch >= " ") buf += ch;
+        if (ch === "\u007f" || ch === "\b") {
+          if (buf) stderr.write("\b \b"); // apaga um asterisco
+          buf = buf.slice(0, -1);
+        } else if (ch >= " ") {
+          buf += ch;
+          stderr.write("*"); // mostra que digitou/colou, sem revelar o valor
+        }
       }
     };
     stdin.on("data", onData);
