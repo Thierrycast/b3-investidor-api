@@ -16,6 +16,8 @@ export interface KeeperOptions {
   avisoAntesMs?: number;
   alertWebhook?: string;
   log?: (msg: string, extra?: Record<string, unknown>) => void;
+  /** Se definido (login automático ligado), é chamado quando a sessão morre, no lugar do alerta. */
+  onNeedsLogin?: () => void;
 }
 
 /**
@@ -68,7 +70,9 @@ export class SessionKeeper {
       this.state.status = code === "no_session" ? "sem-sessao" : "degradado";
       this.state.ultimoErro = { code, message, em: new Date().toISOString() };
       this.opts.log?.("falha ao renovar a sessão", { code });
-      if (e instanceof B3AuthError && e.needsLogin && code !== "no_session") {
+      if (e instanceof B3AuthError && e.needsLogin && this.opts.onNeedsLogin) {
+        this.opts.onNeedsLogin();
+      } else if (e instanceof B3AuthError && e.needsLogin && code !== "no_session") {
         await this.alert("login-necessario", `A renovação falhou (${code}). É preciso rodar \`b3 login\`.`);
       }
     } finally {
@@ -76,7 +80,7 @@ export class SessionKeeper {
     }
   }
 
-  private async alert(tipo: string, mensagem: string) {
+  async alert(tipo: string, mensagem: string) {
     if (!this.opts.alertWebhook) return;
     await fetch(this.opts.alertWebhook, {
       method: "POST",

@@ -5,12 +5,17 @@ import swaggerUi from "@fastify/swagger-ui";
 import { z } from "zod";
 import { B3ApiError, B3AuthError, B3Client, endpointList, type EndpointId } from "@b3-investidor/core";
 import { SessionKeeper } from "./keeper";
+import type { LoginManager } from "./login-manager";
 
 export interface ServerOptions {
   client: B3Client;
   /** Exigida no header x-api-key em todas as rotas, menos /docs e /openapi.json. */
   apiKey: string;
   keeper?: SessionKeeper;
+  /** Login automático quando a sessão vence (se houver credenciais). */
+  loginManager?: LoginManager;
+  /** Quanto uma requisição espera o login automático antes de responder 503. Padrão: 90 s. */
+  loginWaitMs?: number;
   logger?: boolean;
   version?: string;
 }
@@ -35,6 +40,17 @@ const SessionBody = z.object({
   policy: z.string().optional(),
   scope: z.string().optional(),
 });
+
+const CodigoBody = z.object({
+  codigo: z.string().trim().regex(/^\d{4,8}$/, "o código tem de 4 a 8 dígitos"),
+});
+
+/** A sessão venceu e o login automático está esperando algo da pessoa (código do e-mail). */
+class LoginPendente extends Error {
+  constructor(readonly estado: unknown) {
+    super("A sessão venceu e o login automático está esperando o código de verificação enviado por e-mail.");
+  }
+}
 
 function sameKey(a: string, b: string) {
   const x = Buffer.from(a);
@@ -96,6 +112,12 @@ export async function buildServer(opts: ServerOptions): Promise<FastifyInstance>
     if (err instanceof z.ZodError) {
       return reply.code(400).send({ erro: "parâmetros inválidos", detalhes: err.issues.map((i) => ({ campo: i.path.join("."), mensagem: i.message })) });
     }
+    if (err instanceof LoginPendente) {
+      return reply
+        .code(503)
+        .header("retry-after", "30")
+        .send({ erro: err.message, precisaCodigo: true, enviarEm: "POST /v1/login/codigo", login: err.estado });
+    }
     if (err instanceof B3AuthError) {
       return reply.code(err.needsLogin ? 401 : 502).send({ erro: err.message, code: err.code, precisaLogin: err.needsLogin });
     }
@@ -107,12 +129,77 @@ export async function buildServer(opts: ServerOptions): Promise<FastifyInstance>
     return reply.code(500).send({ erro: "erro interno" });
   });
 
+  const lm = opts.loginManager;
+  const loginWait = opts.loginWaitMs ?? 90_000;
+
+  /**
+   * Executa a chamada; se a sessão estiver vencida/ausente e houver credenciais, faz login sozinho
+   * e repete. Se o login parar esperando o código do e-mail, responde 503 com `precisaCodigo`.
+   */
+  async function comSessao<T>(fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn();
+    } catch (e) {
+      if (!(e instanceof B3AuthError && e.needsLogin && lm?.enabled)) throw e;
+      void lm.start();
+      const fase = await lm.settle(loginWait);
+      if (fase === "concluido") return fn();
+      if (fase === "aguardando_codigo" || fase === "entrando") throw new LoginPendente(lm.state);
+      throw e;
+    }
+  }
+
   // ---------- sessão ----------
 
-  app.get("/v1/health", { schema: { tags: ["Sessão"], summary: "Estado da sessão e da renovação automática" } }, async () => ({
+  app.get("/v1/health", { schema: { tags: ["Sessão"], summary: "Estado da sessão, da renovação e do login automático" } }, async () => ({
     ok: true,
     sessao: opts.keeper?.state ?? { status: "desconhecido" },
+    login: lm ? { automatico: lm.enabled, ...lm.state } : { automatico: false },
   }));
+
+  app.get("/v1/login", { schema: { tags: ["Sessão"], summary: "Estado do login automático" } }, async () => ({
+    automatico: lm?.enabled ?? false,
+    ...(lm?.state ?? { fase: "parado" }),
+  }));
+
+  app.post(
+    "/v1/login",
+    {
+      schema: {
+        tags: ["Sessão"],
+        summary: "Inicia um login agora (com as credenciais da configuração)",
+        description:
+          "Abre o login da B3 sem janela, com B3_CPF/B3_SENHA (ou o cofre). A B3 envia um código por e-mail; " +
+          "a resposta volta com `fase: aguardando_codigo` e o código vai em `POST /v1/login/codigo`. " +
+          "CAPTCHA ou tela desconhecida → `fase: erro` (use `b3 login` com janela).",
+      },
+    },
+    async (_req, reply) => {
+      if (!lm?.enabled) return reply.code(409).send({ erro: "Login automático desligado: configure B3_CPF e B3_SENHA (ou `b3 credenciais salvar`)." });
+      void lm.start();
+      await lm.settle(loginWait);
+      return reply.code(lm.state.fase === "concluido" ? 200 : 202).send(lm.state);
+    },
+  );
+
+  app.post(
+    "/v1/login/codigo",
+    {
+      schema: {
+        tags: ["Sessão"],
+        summary: "Envia o código de verificação recebido por e-mail",
+        description: "Só funciona com o login em `fase: aguardando_codigo`. O código nunca é registrado em log.",
+        body: jsonSchema(CodigoBody, "input"),
+      },
+    },
+    async (req, reply) => {
+      const { codigo } = CodigoBody.parse(req.body);
+      if (!lm || !lm.submitCode(codigo)) return reply.code(409).send({ erro: "Nenhum login esperando código agora.", login: lm?.state ?? null });
+      await lm.settle(loginWait);
+      const s = lm.state;
+      return reply.code(s.fase === "concluido" ? 200 : s.fase === "erro" ? 422 : 202).send(s);
+    },
+  );
 
   app.post(
     "/v1/session",
@@ -159,8 +246,8 @@ export async function buildServer(opts: ServerOptions): Promise<FastifyInstance>
       },
       async (req, reply) => {
         const { todasPaginas, ...q } = query.parse(req.query ?? {}) as Record<string, unknown> & { todasPaginas?: boolean };
-        if (paginada && todasPaginas) return client.all(ep.id as EndpointId, q as never);
-        const { data, meta } = await client.callWithMeta(ep.id as EndpointId, q as never);
+        if (paginada && todasPaginas) return comSessao(() => client.all(ep.id as EndpointId, q as never));
+        const { data, meta } = await comSessao(() => client.callWithMeta(ep.id as EndpointId, q as never));
         if (meta.ajustes.length) reply.header("x-b3-ajustes", JSON.stringify(meta.ajustes));
         if (meta.schemaIssues.length) reply.header("x-b3-divergencias-schema", String(meta.schemaIssues.length));
         if (meta.status === 204) return reply.code(204).send();

@@ -119,6 +119,39 @@ Ordem de leitura: `B3_CPF`/`B3_SENHA` do ambiente e depois o cofre. Se faltar o 
 - No ambiente: prefira injetar na hora (gerenciador de segredos, `systemd` `LoadCredential`, secrets do CI) a deixar a senha em `.env`.
 - Nenhum valor de CPF, senha ou token aparece em log, status ou erro.
 
+## Login automático no servidor
+
+Com credenciais configuradas (`B3_CPF`/`B3_SENHA` ou o cofre) e `B3_AUTO_LOGIN` diferente de `0`, o `b3 serve` cuida da sessão:
+
+```
+requisição ──► sessão válida? ── sim ──► responde
+                    │ não (vencida/ausente)
+                    ▼
+             login sem janela (CPF, senha)
+                    │
+          B3 pediu código por e-mail? ── não ──► grava sessão, repete a chamada, responde
+                    │ sim
+                    ▼
+     503 { precisaCodigo: true } + webhook "codigo-necessario"
+                    │
+     POST /v1/login/codigo { "codigo": "123456" }
+                    ▼
+          grava sessão ──► próximas requisições respondem normalmente
+```
+
+| Rota | Para quê |
+|---|---|
+| `GET /v1/login` | fase atual: `parado`, `entrando`, `aguardando_codigo`, `concluido`, `erro` |
+| `POST /v1/login` | inicia um login agora (útil para renovar antes de vencer) |
+| `POST /v1/login/codigo` | entrega o código do e-mail; responde `200` quando a sessão nova está gravada |
+
+- O renovador periódico também dispara o login quando a sessão morre.
+- Uma requisição espera o login até `B3_LOGIN_ESPERA_MS` (padrão 90 s). Requisições simultâneas compartilham o mesmo login.
+- O código precisa chegar em até 10 minutos. Depois, o login vai para `erro` e outra requisição inicia um novo.
+- CAPTCHA ou tela desconhecida → `fase: erro` e webhook `login-falhou`. A saída é `b3 login` com janela e `--push`.
+- Nem o código nem as credenciais aparecem em log, resposta ou `/v1/health`.
+- O servidor precisa de Chrome ou Edge instalado. Em Linux sem tela, o modo headless funciona sem servidor gráfico.
+
 ## Capturar a sessão manualmente
 
 Alternativa sem o `b3 login` (por exemplo, para depurar):

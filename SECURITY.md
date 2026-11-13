@@ -5,7 +5,8 @@
 - **Credenciais**:
   - O `refresh_token` fica num arquivo com modo 600, gravado de forma atômica, ou no `TokenStore` que você fornecer.
   - CPF e senha (opcionais, só no `b3 login`) vêm do ambiente ou do cofre do sistema: DPAPI no Windows, Keychain no macOS, Secret Service no Linux. São digitados sem eco e passam aos utilitários do sistema por stdin, nunca por argumento.
-  - O `b3 login` nunca resolve nem contorna CAPTCHA ou código de verificação: isso fica com a pessoa, na janela.
+  - O `b3 login` e o login automático do servidor nunca resolvem nem contornam CAPTCHA ou código de verificação. O código vem da pessoa (terminal, janela ou `POST /v1/login/codigo`); CAPTCHA só na janela.
+  - `POST /v1/login/codigo` exige `x-api-key`, aceita só dígitos e só quando há um login esperando.
   - Nada disso vai para logs, saída de comandos ou respostas HTTP.
 - **Rede**: o código só fala com `b3investidor.b2clogin.com` e `investidor.b3.com.br`, além do `B3_ALERT_WEBHOOK`, se você configurar um. Sem telemetria.
 - **Servidor**:

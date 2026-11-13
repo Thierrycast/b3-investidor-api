@@ -65,6 +65,19 @@ B3_API_KEY=$(openssl rand -hex 32) pnpm b3 serve
 curl -H "x-api-key: $B3_API_KEY" "http://127.0.0.1:8790/v1/posicao?todasPaginas=true"
 ```
 
+A API cuida da sessão sozinha, como uma aplicação comum:
+
+- **sessão válida** → usa (e renova o access_token a cada hora);
+- **sessão vencida ou ausente** → faz login sozinha com `B3_CPF`/`B3_SENHA` (ou o cofre);
+- **a B3 pede o código do e-mail** (acontece a cada login) → a requisição volta `503` com `precisaCodigo: true`, o webhook avisa, e você manda o código:
+
+```bash
+curl -X POST -H "x-api-key: $B3_API_KEY" -H "content-type: application/json" \
+  -d '{"codigo":"123456"}' http://127.0.0.1:8790/v1/login/codigo
+```
+
+Estado do login em `GET /v1/login`. Para iniciar um login antes de precisar, `POST /v1/login`. Detalhes em [docs/auth.md](docs/auth.md#login-automático-no-servidor).
+
 ## Coisas que vale saber
 
 - **A sessão dura 24 h a partir do login.** O `refresh_token` gira a cada renovação, mas a validade não avança.
