@@ -1,6 +1,6 @@
 import { B3AuthError, type B3Client } from "@b3-investidor/core";
 
-export type SessionHealth = "ok" | "degradado" | "sem-sessao";
+export type SessionHealth = "iniciando" | "ok" | "degradado" | "sem-sessao";
 
 export interface KeeperState {
   status: SessionHealth;
@@ -29,7 +29,7 @@ export interface KeeperOptions {
  * continua necessário. Ver docs/auth.md.
  */
 export class SessionKeeper {
-  readonly state: KeeperState = { status: "sem-sessao" };
+  readonly state: KeeperState = { status: "iniciando" };
   private timer?: NodeJS.Timeout;
   private avisado?: string;
 
