@@ -61,6 +61,9 @@ const SUBMIT = [
   "button:has-text('Confirmar')",
 ];
 
+/** Tela "Código de autenticação" (observada em 13/11/2026): INPUT_OTP_EMAIL + Btn_VERIFY_CODE. */
+const VERIFY = ["#Btn_VERIFY_CODE", "button:has-text('Verificar')", "button:has-text('Confirmar')"];
+
 async function launch(headless: boolean, o: LoginOptions): Promise<Browser> {
   if (o.executablePath) return chromium.launch({ headless, executablePath: o.executablePath });
   const channels = o.channel ? [o.channel] : ["chrome", "msedge"];
@@ -164,8 +167,9 @@ async function fillCode(page: Page, code: string) {
   for (const c of candidates) {
     const meta = [await c.getAttribute("id"), await c.getAttribute("name"), await c.getAttribute("placeholder"), await c.getAttribute("autocomplete")].join(" ");
     if (/c[oó]digo|code|token|otp|verifica|one-time/i.test(meta)) {
-      await c.fill(code.trim());
-      await clickVisible(page, SUBMIT);
+      await c.fill(code.replace(/\s/g, ""));
+      // Só o botão de verificar: a tela também tem "Voltar" e "Enviar Novo código", que não podem ser clicados.
+      if (!(await clickVisible(page, VERIFY))) await c.press("Enter").catch(() => {});
       return true;
     }
   }
@@ -237,7 +241,9 @@ async function attempt(headless: boolean, o: LoginOptions): Promise<B3Session> {
           if (need?.kind === "codigo" && o.askCode && asked < 3) {
             if (o.debugDir) await dumpStructure(page, o.debugDir, ++shots);
             asked++;
-            const typed = await o.askCode("A B3 enviou um código de verificação (veja seu e-mail)");
+            const typed = await o.askCode(
+              asked === 1 ? "A B3 enviou um código de verificação (veja seu e-mail)" : "A tela do código continua aberta (código recusado ou expirado?); digite o mais recente",
+            );
             if (!(await fillCode(page, typed))) throw new NeedsHuman("não achei o campo do código");
             status("código enviado");
             deadline = Date.now() + (o.headlessTimeoutMs ?? 90_000);
