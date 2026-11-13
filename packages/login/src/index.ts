@@ -167,7 +167,12 @@ async function fillCode(page: Page, code: string) {
   for (const c of candidates) {
     const meta = [await c.getAttribute("id"), await c.getAttribute("name"), await c.getAttribute("placeholder"), await c.getAttribute("autocomplete")].join(" ");
     if (/c[oó]digo|code|token|otp|verifica|one-time/i.test(meta)) {
-      await c.fill(code.replace(/\s/g, ""));
+      // O campo visível (INPUT_OTP_EMAIL) é uma fachada: o script da página copia o valor para o campo
+      // real do B2C (VerificationCode, oculto) em eventos de tecla. `fill` não dispara tecla; digitamos.
+      await c.click().catch(() => {});
+      await c.fill("").catch(() => {});
+      await c.pressSequentially(code.replace(/\s/g, ""), { delay: 60 });
+      await sleep(300);
       // Só o botão de verificar: a tela também tem "Voltar" e "Enviar Novo código", que não podem ser clicados.
       if (!(await clickVisible(page, VERIFY))) await c.press("Enter").catch(() => {});
       return true;
@@ -248,6 +253,7 @@ async function attempt(headless: boolean, o: LoginOptions): Promise<B3Session> {
             status("código enviado");
             deadline = Date.now() + (o.headlessTimeoutMs ?? 90_000);
             await sleep(3000);
+            if (o.debugDir) await dumpStructure(page, o.debugDir, ++shots);
             continue;
           }
           if (need && need.kind !== "codigo") throw new NeedsHuman(need.detail);
