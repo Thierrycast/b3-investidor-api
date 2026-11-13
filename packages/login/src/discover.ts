@@ -145,6 +145,9 @@ export async function discover(o: DiscoverOptions): Promise<DiscoveredRoute[]> {
       parametros: [],
       vistaEm: new Date().toISOString(),
     };
+    // Registra antes de qualquer await: respostas simultâneas da mesma rota não contam como "nova" duas vezes.
+    routes.set(key, r);
+    if (isNew) o.onRoute?.(r);
     r.status[res.status()] = (r.status[res.status()] ?? 0) + 1;
     r.parametros = [...new Set([...r.parametros, ...[...u.searchParams.keys()].filter((k) => !IGNORE_PARAMS.has(k))])].sort();
     const ct = res.headers()["content-type"];
@@ -157,11 +160,7 @@ export async function discover(o: DiscoverOptions): Promise<DiscoveredRoute[]> {
         if (!r.shape || JSON.stringify(s).length > JSON.stringify(r.shape).length) r.shape = s;
       }
     }
-    routes.set(key, r);
-    if (isNew) {
-      o.onRoute?.(r);
-      save();
-    }
+    if (isNew) save();
   };
 
   const watch = (ctx: ReturnType<Browser["contexts"]>[number]) => ctx.on("response", (r) => void onResponse(r));

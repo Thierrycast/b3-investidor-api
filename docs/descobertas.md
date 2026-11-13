@@ -48,3 +48,11 @@ Depois, chamadas diretas de um servidor Linux.
 - Windows PowerShell 5 chamado de dentro do pwsh 7 herda o `PSModulePath` e não carrega `Microsoft.PowerShell.Security`. O cofre usa `ProtectedData` (.NET) direto e não repassa `PSModulePath`.
 - Primeiro login real completo: CPF → senha → **código por e-mail** → redirecionamento com `code` → troca por tokens. Sessão de 24 h; `probe` com 200.
 - Scripts passados a `page.evaluate` como função quebram sob `tsx` (esbuild injeta `__name`, ausente na página): o detector de tela falhava calado. Agora vão como texto.
+
+## 2026-11-13 — mapa dos micro-frontends
+
+- `/assets/mf.manifest.json` lista 21 micro-frontends; cada `remoteEntry.js` mapeia os chunks como `{id:"hash"}[id]+".js"`. Os prefixos de serviço (`negocio-xxx/`) e os caminhos (`api/.../vN/...`) ficam em strings separadas.
+- Cada serviço tem um gêmeo `negocio-xxx-master` (perfil Master, escopo `.../Master`).
+- Telas do portal: `/extrato/*`, `/minha-carteira/*`, `/proventos/*`, `/relatorios/*`, `/voto-a-distancia/*`, `/renda-fixa`, `/publicacoes`, `/clube-b3`, `/calculadora-renda-fixa`, `/calculadoras-ir`, `/portabilidade/*`. Resultado em [mapa-rotas.md](mapa-rotas.md).
+- `transferencia-ativos/v2/solicitacoes/pendentes` voltou a dar 504 (4 de 4). A portabilidade usa `/api/transferencia-ativos/v3/...` sem prefixo `negocio-`.
+- `investidor/v1/notificacoes/leitura` provavelmente marca notificações como lidas: tem efeito colateral e fica fora da API.
