@@ -46,3 +46,5 @@ Depois, chamadas diretas de um servidor Linux.
 
 - O `doc_hint` decide o fluxo do B2C: com um valor que não é o documento da pessoa (ex.: `0`), a tela leva ao **cadastro**, não ao login. O `b3 login` passou a exigir o CPF/CNPJ real.
 - Windows PowerShell 5 chamado de dentro do pwsh 7 herda o `PSModulePath` e não carrega `Microsoft.PowerShell.Security`. O cofre usa `ProtectedData` (.NET) direto e não repassa `PSModulePath`.
+- Primeiro login real completo: CPF → senha → **código por e-mail** → redirecionamento com `code` → troca por tokens. Sessão de 24 h; `probe` com 200.
+- Scripts passados a `page.evaluate` como função quebram sob `tsx` (esbuild injeta `__name`, ausente na página): o detector de tela falhava calado. Agora vão como texto.
