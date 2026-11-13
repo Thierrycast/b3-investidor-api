@@ -207,6 +207,23 @@ describe("rotas", () => {
     expect(chamadasFeitas[2]).toContain("dataInicio=2026-01-01");
     expect(chamadasFeitas[2]).toContain("dataFim=2026-11-10");
   });
+
+  it("rota de balcão repassa pagina e qtdRegistros", async () => {
+    const chamadasFeitas: string[] = [];
+    const { f } = fakeFetch({
+      "/oauth2/v2.0/token": tokenOk,
+      "/solicitacoes/listados-balcao": (url) => {
+        chamadasFeitas.push(url.pathname + url.search);
+        return json({ registros: [] });
+      },
+    });
+    const cliente = new B3Client({ store: new MemoryTokenStore({ refresh_token: "x" }), fetch: f });
+    const resposta = await cliente.call("transferenciaListadosBalcao", { pagina: 3, qtdRegistros: 20 });
+    expect(resposta).toEqual({ registros: [] });
+    expect(chamadasFeitas[0]).toContain("/solicitacoes/listados-balcao");
+    expect(chamadasFeitas[0]).toContain("pagina=3");
+    expect(chamadasFeitas[0]).toContain("qtdRegistros=20");
+  });
 });
 
 describe("shape e diff", () => {

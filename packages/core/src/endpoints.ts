@@ -518,6 +518,23 @@ export const endpoints = {
     response: S.NaoMapeado,
     status: "campos-pendentes",
   }),
+
+  // ---------- transferência / balcão ----------
+
+  transferenciaListadosBalcao: def({
+    id: "transferenciaListadosBalcao",
+    tag: "Transferência",
+    summary: "Solicitações de ativos listados em balcão",
+    b3Path: "/api/transferencia-ativos/v3/solicitacoes/listados-balcao",
+    route: "/v1/transferencia/listados-balcao",
+    query: z.object({
+      pagina: S.PaginaParam.optional().describe("Página da consulta"),
+      qtdRegistros: z.coerce.number().int().optional().describe("Quantidade de registros por página"),
+    }),
+    response: S.NaoMapeado,
+    status: "campos-pendentes",
+    notes: ["Observado status 200 na navegação ao vivo do portal."],
+  }),
 } as const;
 
 export type EndpointId = keyof typeof endpoints;
