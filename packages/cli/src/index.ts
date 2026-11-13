@@ -16,6 +16,10 @@ const HELP = `b3 — Área do Investidor da B3 (não oficial)
 
 Uso: b3 <comando> [opções]
 
+  login                   Faz login na B3 e grava a sessão. Usa B3_CPF/B3_SENHA se existirem:
+                          tenta sem janela e, se a B3 pedir CAPTCHA/código, abre a janela para você.
+      --headed            sempre com janela      --headless   nunca abre janela
+      --push <url>        envia a sessão a um servidor (POST <url>/v1/session, x-api-key = B3_PUSH_KEY ou B3_API_KEY)
   refresh                 Renova a sessão (grava o refresh_token novo) e mostra as validades.
   probe                   Teste rápido: renova, chama última carga e posição; só status e tipos.
   shapes [ids...] [--all] Árvore de TIPOS das respostas (nunca valores) e campos fora do schema.
@@ -36,6 +40,9 @@ const { values, positionals } = parseArgs({
     all: { type: "boolean", default: false },
     json: { type: "boolean", default: false },
     help: { type: "boolean", short: "h", default: false },
+    headed: { type: "boolean", default: false },
+    headless: { type: "boolean", default: false },
+    push: { type: "string" },
   },
 });
 
@@ -47,6 +54,31 @@ async function main() {
   if (values.help || !cmd) return console.log(HELP);
 
   switch (cmd) {
+    case "login": {
+      const { login } = await import("@b3-investidor/login");
+      const session = await login({
+        cpf: process.env.B3_CPF || undefined,
+        senha: process.env.B3_SENHA || undefined,
+        mode: values.headed ? "headed" : values.headless ? "headless" : "auto",
+        onStatus: (m) => console.error(`· ${m}`),
+      });
+      if (values.push) {
+        const key = process.env.B3_PUSH_KEY || process.env.B3_API_KEY;
+        if (!key) throw new Error("Defina B3_PUSH_KEY (ou B3_API_KEY) com a chave do servidor de destino.");
+        const res = await fetch(new URL("/v1/session", values.push), {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-api-key": key },
+          body: JSON.stringify(session),
+        });
+        const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+        if (!res.ok) throw new Error(`Servidor recusou a sessão (HTTP ${res.status}): ${String(body.erro ?? "")}`);
+        return out({ ok: true, destino: values.push, refreshExpiraEm: body.refreshExpiraEm ?? session.refresh_expires_at });
+      }
+      const store = new FileTokenStore(values.session);
+      await store.save(session);
+      return out({ ok: true, arquivo: store.path, refreshExpiraEm: session.refresh_expires_at ?? "(não informado)" });
+    }
+
     case "refresh": {
       const r = await client().refresh();
       return out({

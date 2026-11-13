@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@b3-investidor/core": "workspace:*",
-    "@b3-investidor/server": "workspace:*"
+    "@b3-investidor/server": "workspace:*",
+    "@b3-investidor/login": "workspace:*"
   }
 }

@@ -32,6 +32,9 @@ importers:
       '@b3-investidor/core':
         specifier: workspace:*
         version: link:../core
+      '@b3-investidor/login':
+        specifier: workspace:*
+        version: link:../login
       '@b3-investidor/server':
         specifier: workspace:*
         version: link:../server
@@ -41,6 +44,15 @@ importers:
       zod:
         specifier: ^4.6.7
         version: 4.6.7
+
+  packages/login:
+    dependencies:
+      '@b3-investidor/core':
+        specifier: workspace:*
+        version: link:../core
+      playwright-core:
+        specifier: ^1.65.0
+        version: 1.65.0
 
   packages/server:
     dependencies:
@@ -732,6 +744,11 @@ packages:
 
   pino@10.4.0:
     resolution: {integrity: sha512-bk1ZMTwG/Vymx+zPoa28MhNzucFvXJWp3csrSuxuHPSMeUettaCoQ5Jvg07mtC4JGNpcfTwz41oVCnNgBK9+vA==}
+    hasBin: true
+
+  playwright-core@1.65.0:
+    resolution: {integrity: sha512-vNSKgH6YqtN7cdT/L334zo0a+YwkrpicyrHJlWWPIm/Q+Nn2SWInil01oT0mbu96U4GgoRtCYQD9CzJQgju+lA==}
+    engines: {node: '>=20'}
     hasBin: true
 
   postcss@8.5.32:
@@ -1530,6 +1547,8 @@ snapshots:
       safe-stable-stringify: 2.5.0
       sonic-boom: 4.2.1
       thread-stream: 4.2.1
+
+  playwright-core@1.65.0: {}
 
   postcss@8.5.32:
     dependencies:

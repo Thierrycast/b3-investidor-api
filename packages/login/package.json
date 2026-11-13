@@ -1,0 +1,14 @@
+{
+  "name": "@b3-investidor/login",
+  "version": "0.1.0",
+  "description": "Login assistido na Área do Investidor da B3 (Playwright): tenta headless, cai para janela visível; nunca contorna desafio.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@b3-investidor/core": "workspace:*",
+    "playwright-core": "^1.65.0"
+  }
+}
