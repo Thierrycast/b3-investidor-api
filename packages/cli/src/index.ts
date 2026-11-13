@@ -19,6 +19,8 @@ Uso: b3 <comando> [opções]
   login                   Faz login na B3 e grava a sessão. Usa B3_CPF/B3_SENHA se existirem:
                           tenta sem janela e, se a B3 pedir CAPTCHA/código, abre a janela para você.
       --headed            sempre com janela      --headless   nunca abre janela
+      --debug <pasta>     grava a estrutura de cada tela (ids, tipos, botões; nunca valores)
+                          Código de verificação por e-mail: no terminal, é pedido ali mesmo.
       --push <url>        envia a sessão a um servidor (POST <url>/v1/session, x-api-key = B3_PUSH_KEY ou B3_API_KEY)
   credenciais salvar      Guarda CPF e senha cifrados no cofre do sistema (DPAPI/Keychain/libsecret),
                           digitados sem eco. Também: credenciais status | apagar.
@@ -46,6 +48,7 @@ const { values, positionals } = parseArgs({
     headed: { type: "boolean", default: false },
     headless: { type: "boolean", default: false },
     push: { type: "string" },
+    debug: { type: "string" },
   },
 });
 
@@ -66,6 +69,9 @@ async function main() {
         cpf: cred.cpf,
         senha: cred.senha,
         mode: values.headed ? "headed" : values.headless ? "headless" : "auto",
+        // Código de verificação no terminal (só em terminal interativo; senão vai para a janela).
+        askCode: process.stdin.isTTY ? (motivo) => promptHidden(`${motivo}. Código: `) : undefined,
+        debugDir: values.debug,
         onStatus: (m) => console.error(`· ${m}`),
       });
       if (values.push) {

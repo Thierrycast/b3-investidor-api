@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { B3AuthError, buildAuthorizeUrl, createPkce, exchangeCode, LOGIN_REDIRECT_URI, type B3Session } from "@b3-investidor/core";
 
@@ -7,11 +9,12 @@ import { B3AuthError, buildAuthorizeUrl, createPkce, exchangeCode, LOGIN_REDIREC
  *
  * Como funciona (detalhes em docs/auth.md → "Login assistido"):
  * - Abre direto o /authorize do Azure AD B2C, com PKCE próprio. O site www.investidor.b3.com.br
- *   (que fica atrás de um desafio do Cloudflare) nunca é carregado: o redirecionamento final
- *   para ele é interceptado só para ler o `code`.
- * - Preenche CPF/CNPJ e senha quando informados. Se a B3 pedir CAPTCHA, código de verificação
- *   ou qualquer outra interação, o modo headless desiste e reabre uma janela visível para a
- *   pessoa concluir. A ferramenta nunca resolve nem contorna desafios.
+ *   (que fica atrás de um desafio do Cloudflare) não é carregado: o redirecionamento final para ele
+ *   é lido para obter o `code` e respondido com uma página local.
+ * - Preenche CPF/CNPJ e senha quando informados.
+ * - Código de verificação (e-mail): no headless, se houver `askCode`, a pessoa digita o código no
+ *   terminal; sem `askCode`, abre a janela. CAPTCHA sempre vai para a janela.
+ *   A ferramenta nunca resolve nem contorna desafios.
  * - Troca o `code` por tokens e devolve a sessão (refresh_token).
  */
 export interface LoginOptions {
@@ -21,8 +24,12 @@ export interface LoginOptions {
   mode?: "auto" | "headless" | "headed";
   /** Quanto esperar a pessoa concluir na janela. Padrão: 10 min. */
   headedTimeoutMs?: number;
-  /** Quanto esperar no headless antes de desistir. Padrão: 60 s. */
+  /** Quanto esperar no headless antes de desistir (sem contar o tempo de digitar o código). Padrão: 90 s. */
   headlessTimeoutMs?: number;
+  /** Pede à pessoa o código de verificação enviado pela B3 (ex.: por e-mail). Usado só no headless. */
+  askCode?: (motivo: string) => Promise<string>;
+  /** Grava a ESTRUTURA de cada tela (ids, tipos, textos de botão; nunca valores digitados) para depuração. */
+  debugDir?: string;
   /** Canal do navegador instalado (chrome, msedge). Padrão: chrome, depois msedge. */
   channel?: string;
   executablePath?: string;
@@ -37,7 +44,22 @@ const DONE_HTML = `<!doctype html><meta charset="utf-8"><title>B3 — login conc
 <body style="font-family:system-ui;padding:3rem;max-width:36rem;margin:auto">
 <h1>Login concluído</h1><p>A sessão foi capturada pelo <code>b3 login</code>. Pode fechar esta janela.</p></body>`;
 
+const REDIRECT_ORIGIN = new URL(LOGIN_REDIRECT_URI).origin;
 const digits = (s?: string) => (s ?? "").replace(/\D/g, "");
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+const SUBMIT = [
+  "#next",
+  "#continue",
+  "#Btn_CONTINUE",
+  "button[type=submit]",
+  "button:has-text('Enviar')",
+  "button:has-text('Entrar')",
+  "button:has-text('Continuar')",
+  "button:has-text('Acessar')",
+  "button:has-text('Verificar')",
+  "button:has-text('Confirmar')",
+];
 
 async function launch(headless: boolean, o: LoginOptions): Promise<Browser> {
   if (o.executablePath) return chromium.launch({ headless, executablePath: o.executablePath });
@@ -55,27 +77,45 @@ async function launch(headless: boolean, o: LoginOptions): Promise<Browser> {
   );
 }
 
+type Need = { kind: "captcha" | "codigo" | "erro"; detail: string };
+
+// Scripts que rodam DENTRO do navegador vão como texto: transpiladores (tsx/esbuild com keepNames)
+// injetam helpers como `__name` em funções, que não existem na página e fariam o evaluate falhar calado.
+const JS_HUMAN_NEEDED = `(() => {
+  const visible = (e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== "hidden"; };
+  const frames = [...document.querySelectorAll("iframe")].filter(visible).map((f) => f.src);
+  if (frames.some((s) => /recaptcha\\/(api2|enterprise)\\/bframe|hcaptcha|challenges\\.cloudflare/.test(s))) return { kind: "captcha", detail: "captcha" };
+  const otp = [...document.querySelectorAll("input")].find((i) => visible(i) && i.type !== "hidden" && i.type !== "password" &&
+    (i.autocomplete === "one-time-code" || /c[oó]digo|code|token|otp|verifica/i.test(i.id + " " + i.name + " " + i.placeholder)));
+  if (otp) return { kind: "codigo", detail: "código de verificação" };
+  const err = [...document.querySelectorAll(".error.pageLevel, .error.itemLevel, [role=alert]")].find((e) => visible(e) && (e.textContent || "").trim().length > 0);
+  if (err) return { kind: "erro", detail: "mensagem da B3: " + (err.textContent || "").trim().slice(0, 120) };
+  return null;
+})()`;
+
+const JS_STRUCTURE = `(() => {
+  const vis = (e) => e.getBoundingClientRect().width > 0;
+  return {
+    title: document.title,
+    path: location.origin + location.pathname,
+    inputs: [...document.querySelectorAll("input,select,textarea")].map((x) => ({ tag: x.tagName.toLowerCase(), id: x.id, name: x.name, type: x.type, autocomplete: x.autocomplete, placeholder: x.placeholder, visivel: vis(x) })),
+    botoes: [...document.querySelectorAll("button,input[type=submit],a.button")].map((b) => ({ id: b.id, texto: (b.textContent || b.value || "").trim().slice(0, 40), visivel: vis(b) })),
+    frames: [...document.querySelectorAll("iframe")].map((f) => f.src.split("?")[0]),
+    mensagens: [...document.querySelectorAll(".error, [role=alert], .intro, h1, h2")].filter(vis).map((e) => (e.textContent || "").trim().slice(0, 100)).filter(Boolean),
+  };
+})()`;
+
 /** Procura sinais de que a B3 está pedindo algo que só uma pessoa pode fazer. */
-async function humanNeeded(page: Page): Promise<string | null> {
-  return page
-    .evaluate(() => {
-      const visible = (e: Element) => {
-        const r = (e as HTMLElement).getBoundingClientRect();
-        return r.width > 0 && r.height > 0 && getComputedStyle(e as HTMLElement).visibility !== "hidden";
-      };
-      const frames = [...document.querySelectorAll("iframe")].filter(visible).map((f) => f.src);
-      if (frames.some((s) => /recaptcha\/(api2|enterprise)\/bframe|hcaptcha|challenges\.cloudflare/.test(s))) return "captcha";
-      const otp = [...document.querySelectorAll("input")].find(
-        (i) => visible(i) && (i.autocomplete === "one-time-code" || /c[oó]digo|token|otp|verifica/i.test(`${i.id} ${i.name} ${i.placeholder}`)),
-      );
-      if (otp) return "codigo-de-verificacao";
-      const err = [...document.querySelectorAll(".error.pageLevel, .error.itemLevel, [role=alert]")].find(
-        (e) => visible(e) && (e.textContent ?? "").trim().length > 0,
-      );
-      if (err) return `mensagem da B3: ${(err.textContent ?? "").trim().slice(0, 120)}`;
-      return null;
-    })
-    .catch(() => null);
+async function humanNeeded(page: Page): Promise<Need | null> {
+  return (page.evaluate(JS_HUMAN_NEEDED) as Promise<Need | null>).catch(() => null);
+}
+
+/** Estrutura da tela, sem valores: para entender telas novas sem expor dados. */
+async function dumpStructure(page: Page, dir: string, n: number) {
+  const s = await page.evaluate(JS_STRUCTURE).catch(() => null);
+  if (!s) return;
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, `tela-${String(n).padStart(2, "0")}.json`), JSON.stringify(s, null, 2));
 }
 
 async function clickVisible(page: Page, selectors: string[]) {
@@ -92,25 +132,44 @@ async function clickVisible(page: Page, selectors: string[]) {
 /** Preenche o que der. Nunca lança: quem decide se deu certo é a captura do `code`. */
 async function autofill(page: Page, o: LoginOptions, status: (m: string) => void) {
   const cpf = digits(o.cpf);
-  if (cpf) {
-    const doc = page.locator("#DOC_INPUT");
-    if (await doc.waitFor({ state: "visible", timeout: 20_000 }).then(() => true, () => false)) {
-      await doc.fill(cpf).catch(() => {});
-      const terms = page.locator("#termos_e_politicas");
-      if ((await terms.count()) && !(await terms.isChecked().catch(() => true))) await terms.check().catch(() => {});
-      status("CPF/CNPJ preenchido");
-      await clickVisible(page, ["#Btn_CONTINUE", "#continue", "button:has-text('Continuar')"]);
-    }
+  const doc = page.locator("#DOC_INPUT");
+  if (cpf && (await doc.waitFor({ state: "visible", timeout: 20_000 }).then(() => true, () => false))) {
+    if (!(await doc.inputValue().catch(() => ""))) await doc.fill(cpf).catch(() => {});
+    const terms = page.locator("#termos_e_politicas");
+    if ((await terms.count()) && !(await terms.isChecked().catch(() => true))) await terms.check().catch(() => {});
+    status("CPF/CNPJ preenchido");
+    await clickVisible(page, ["#Btn_CONTINUE", "#continue", "button:has-text('Continuar')"]);
   }
   if (o.senha) {
     const pwd = page.locator("input[type=password]").filter({ visible: true }).first();
     if (await pwd.waitFor({ state: "visible", timeout: 30_000 }).then(() => true, () => false)) {
       await pwd.fill(o.senha).catch(() => {});
-      status("senha preenchida");
-      const clicked = await clickVisible(page, ["#next", "#Btn_CONTINUE", "#continue", "button[type=submit]", "button:has-text('Entrar')", "button:has-text('Continuar')", "button:has-text('Acessar')"]);
-      if (!clicked) await pwd.press("Enter").catch(() => {});
+      status("senha preenchida; enviando");
+      const before = page.url();
+      await clickVisible(page, SUBMIT);
+      await sleep(1500);
+      // Se nada mudou (botão não encontrado ou ignorado), tenta Enter no campo.
+      if (page.url() === before && (await pwd.isVisible().catch(() => false))) await pwd.press("Enter").catch(() => {});
     }
   }
+}
+
+/** Preenche o código de verificação digitado pela pessoa e envia. */
+async function fillCode(page: Page, code: string) {
+  const input = page
+    .locator("input:not([type=hidden]):not([type=password])")
+    .filter({ visible: true })
+    .filter({ hasNot: page.locator("[type=checkbox]") });
+  const candidates = await input.all();
+  for (const c of candidates) {
+    const meta = [await c.getAttribute("id"), await c.getAttribute("name"), await c.getAttribute("placeholder"), await c.getAttribute("autocomplete")].join(" ");
+    if (/c[oó]digo|code|token|otp|verifica|one-time/i.test(meta)) {
+      await c.fill(code.trim());
+      await clickVisible(page, SUBMIT);
+      return true;
+    }
+  }
+  return false;
 }
 
 async function attempt(headless: boolean, o: LoginOptions): Promise<B3Session> {
@@ -118,6 +177,7 @@ async function attempt(headless: boolean, o: LoginOptions): Promise<B3Session> {
   const pkce = createPkce();
   const state = randomUUID();
   const browser = await launch(headless, o);
+  const timers: NodeJS.Timeout[] = [];
   try {
     const context = await browser.newContext({ locale: "pt-BR" });
     let resolveCode!: (c: string) => void;
@@ -127,35 +187,68 @@ async function attempt(headless: boolean, o: LoginOptions): Promise<B3Session> {
       rejectCode = rej;
     });
 
-    // O redirecionamento final vai para o site; interceptamos para ler o code sem carregar o site.
-    await context.route(`${LOGIN_REDIRECT_URI}**`, async (route) => {
-      const u = new URL(route.request().url());
+    // Lê o code de qualquer requisição/navegação para o redirect_uri (redirecionamento HTTP, JS ou formulário).
+    const inspect = (raw: string) => {
+      let u: URL;
+      try {
+        u = new URL(raw);
+      } catch {
+        return false;
+      }
+      if (u.origin !== REDIRECT_ORIGIN) return false;
       const code = u.searchParams.get("code");
       const err = u.searchParams.get("error_description") ?? u.searchParams.get("error");
       if (code && u.searchParams.get("state") === state) resolveCode(code);
       else if (err) rejectCode(new B3AuthError(`Login recusado pela B3: ${err.split(/\r?\n/)[0]?.slice(0, 160)}`, "login_error", true));
-      await route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body: DONE_HTML });
-    });
+      return true;
+    };
+    context.on("request", (r) => void inspect(r.url()));
+    // Responde com página local em vez de carregar o site (que fica atrás do Cloudflare).
+    await context.route(
+      (u) => u.origin === REDIRECT_ORIGIN,
+      (route) => route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body: DONE_HTML }),
+    );
 
     const page = await context.newPage();
+    page.on("framenavigated", (f) => void inspect(f.url()));
+
+    let shots = 0;
+    if (o.debugDir) {
+      const dir = o.debugDir;
+      page.on("load", () => void dumpStructure(page, dir, ++shots));
+    }
+
     status("abrindo o login da B3");
-    await page.goto(
-      buildAuthorizeUrl({ challenge: pkce.challenge, state, nonce: randomUUID(), docHint: digits(o.cpf) }),
-      { waitUntil: "domcontentloaded", timeout: 60_000 },
-    );
+    await page.goto(buildAuthorizeUrl({ challenge: pkce.challenge, state, nonce: randomUUID(), docHint: digits(o.cpf) }), {
+      waitUntil: "domcontentloaded",
+      timeout: 60_000,
+    });
 
     const fill = autofill(page, o, status);
 
     let code: string;
     if (headless) {
-      const deadline = Date.now() + (o.headlessTimeoutMs ?? 60_000);
       const watchdog = (async () => {
         await fill;
+        let deadline = Date.now() + (o.headlessTimeoutMs ?? 90_000);
+        let asked = 0;
         while (Date.now() < deadline) {
-          const why = await humanNeeded(page);
-          if (why) throw new NeedsHuman(why);
-          await new Promise((r) => setTimeout(r, 1000));
+          const need = await humanNeeded(page);
+          if (need?.kind === "codigo" && o.askCode && asked < 3) {
+            if (o.debugDir) await dumpStructure(page, o.debugDir, ++shots);
+            asked++;
+            const typed = await o.askCode("A B3 enviou um código de verificação (veja seu e-mail)");
+            if (!(await fillCode(page, typed))) throw new NeedsHuman("não achei o campo do código");
+            status("código enviado");
+            deadline = Date.now() + (o.headlessTimeoutMs ?? 90_000);
+            await sleep(3000);
+            continue;
+          }
+          if (need && need.kind !== "codigo") throw new NeedsHuman(need.detail);
+          if (need?.kind === "codigo") throw new NeedsHuman(need.detail);
+          await sleep(1000);
         }
+        if (o.debugDir) await dumpStructure(page, o.debugDir, ++shots);
         throw new NeedsHuman("tempo esgotado sem concluir o login");
       })();
       code = await Promise.race([codeP, watchdog]);
@@ -164,7 +257,9 @@ async function attempt(headless: boolean, o: LoginOptions): Promise<B3Session> {
       const timeout = o.headedTimeoutMs ?? 600_000;
       code = await Promise.race([
         codeP,
-        new Promise<never>((_, rej) => setTimeout(() => rej(new B3AuthError("Tempo esgotado esperando o login na janela.", "login_timeout", true)), timeout).unref()),
+        new Promise<never>((_, rej) => {
+          timers.push(setTimeout(() => rej(new B3AuthError("Tempo esgotado esperando o login na janela.", "login_timeout", true)), timeout));
+        }),
         new Promise<never>((_, rej) => browser.on("disconnected", () => rej(new B3AuthError("A janela foi fechada antes de concluir o login.", "login_closed", true)))),
       ]);
     }
@@ -173,6 +268,7 @@ async function attempt(headless: boolean, o: LoginOptions): Promise<B3Session> {
     const { session } = await exchangeCode({ code, verifier: pkce.verifier });
     return session;
   } finally {
+    timers.forEach(clearTimeout);
     await browser.close().catch(() => {});
   }
 }
@@ -184,7 +280,7 @@ export async function login(o: LoginOptions = {}): Promise<B3Session> {
   const mode = o.mode ?? "auto";
   // O B2C decide o fluxo pelo doc_hint: sem o CPF/CNPJ real ele cai na tela de cadastro.
   if (!digits(o.cpf)) throw new B3AuthError("Informe o CPF/CNPJ (B3_CPF, `b3 credenciais salvar` ou digite quando pedido).", "cpf_ausente", true);
-  const canHeadless = Boolean(digits(o.cpf) && o.senha);
+  const canHeadless = Boolean(o.senha);
 
   if (mode === "headed" || (mode === "auto" && !canHeadless)) return attempt(false, o);
 
