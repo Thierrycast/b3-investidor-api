@@ -13,7 +13,8 @@ Cliente TypeScript, API HTTP com Swagger e ferramentas de descoberta para a **Á
 |---|---|
 | [`@b3-investidor/core`](packages/core) | Cliente tipado: autenticação Azure AD B2C, renovação, 20+ rotas com schemas zod, paginação e erros |
 | [`@b3-investidor/server`](packages/server) | API HTTP (Fastify) com **Swagger em `/docs`**, chave de acesso e renovação automática da sessão |
-| [`@b3-investidor/cli`](packages/cli) | `b3`: `refresh`, `probe`, `shapes`, `endpoints`, `serve` (e `login` em breve) |
+| [`@b3-investidor/cli`](packages/cli) | `b3`: `login`, `credenciais`, `refresh`, `probe`, `shapes`, `endpoints`, `serve` |
+| [`@b3-investidor/login`](packages/login) | Login assistido (Playwright + Chrome/Edge instalado) e cofre de credenciais do sistema |
 
 Rotas, parâmetros e campos estão em **[docs/endpoints.md](docs/endpoints.md)**. Como a autenticação funciona, em **[docs/auth.md](docs/auth.md)**.
 O diário do que foi observado, com datas, está em [docs/descobertas.md](docs/descobertas.md).
@@ -28,9 +29,16 @@ pnpm install
 cp .env.example .env        # ajuste o que for usar
 ```
 
-**1. Obter a sessão.** O `b3 login` (em desenvolvimento) vai abrir o login da B3 e guardar a sessão sozinho.
-Por enquanto, siga [docs/auth.md → Capturar a sessão manualmente](docs/auth.md#capturar-a-sessão-manualmente).
-O resultado é um `session.json` (modo 600) com `refresh_token`, `client_id`, `policy` e `scope`.
+**1. Obter a sessão** (precisa do Chrome ou do Edge instalado):
+
+```bash
+pnpm b3 credenciais salvar   # opcional: CPF e senha cifrados no cofre do sistema (DPAPI/Keychain/libsecret)
+pnpm b3 login                # abre o login da B3; CAPTCHA ou código, se pedidos, você conclui na janela
+```
+
+O resultado é um `session.json` (modo 600) com `refresh_token`, `client_id`, `policy` e `scope`, válido por 24 h.
+Em servidor sem tela, faça login no seu PC e envie a sessão com `pnpm b3 login --push https://servidor`.
+Detalhes e alternativa manual em [docs/auth.md](docs/auth.md#login-assistido-b3-login).
 
 **2. Testar:**
 

@@ -12,9 +12,9 @@ Estado em 2026-11-13. Ajude onde puder: veja [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Em andamento
 
-- [ ] **`b3 login`**: login assistido com Playwright.
-  - Primeiro tenta headless com `B3_CPF`/`B3_SENHA`. Se aparecer CAPTCHA, código de verificação ou desafio, abre a janela já preenchida para a pessoa concluir. **Nunca contorna desafio.**
-  - Sem env, abre a janela direto.
+- [x] Cofre de credenciais (`b3 credenciais`): DPAPI, Keychain, libsecret
+- [ ] **`b3 login`**: implementado; falta validar o fluxo completo depois da senha (telas de código e confirmação de dispositivo).
+  - Com CPF e senha, tenta headless. Se aparecer CAPTCHA, código de verificação ou desafio, abre a janela para a pessoa concluir. **Nunca contorna desafio.**
   - `--push` envia a sessão para um servidor remoto (`POST /v1/session`).
 - [ ] **`b3 discover`**: abre o portal num navegador monitorado e registra rotas, nomes de parâmetros e árvores de tipos enquanto a pessoa navega.
 - [ ] Build publicável (`dist/` + tipos) e publicação no npm.

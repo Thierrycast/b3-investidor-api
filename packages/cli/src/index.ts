@@ -20,6 +20,9 @@ Uso: b3 <comando> [opções]
                           tenta sem janela e, se a B3 pedir CAPTCHA/código, abre a janela para você.
       --headed            sempre com janela      --headless   nunca abre janela
       --push <url>        envia a sessão a um servidor (POST <url>/v1/session, x-api-key = B3_PUSH_KEY ou B3_API_KEY)
+  credenciais salvar      Guarda CPF e senha cifrados no cofre do sistema (DPAPI/Keychain/libsecret),
+                          digitados sem eco. Também: credenciais status | apagar.
+                          Ordem usada no login: B3_CPF/B3_SENHA do ambiente, depois o cofre.
   refresh                 Renova a sessão (grava o refresh_token novo) e mostra as validades.
   probe                   Teste rápido: renova, chama última carga e posição; só status e tipos.
   shapes [ids...] [--all] Árvore de TIPOS das respostas (nunca valores) e campos fora do schema.
@@ -55,10 +58,13 @@ async function main() {
 
   switch (cmd) {
     case "login": {
-      const { login } = await import("@b3-investidor/login");
+      const { login, resolveCredentials, promptHidden } = await import("@b3-investidor/login");
+      const cred = resolveCredentials();
+      if (!cred.cpf) cred.cpf = await promptHidden("CPF/CNPJ (não aparece na tela): ");
+      console.error(`· credenciais: ${cred.origem === "nenhuma" ? "CPF digitado; senha na janela" : `de ${cred.origem}${cred.senha ? "" : " (só CPF)"}`}`);
       const session = await login({
-        cpf: process.env.B3_CPF || undefined,
-        senha: process.env.B3_SENHA || undefined,
+        cpf: cred.cpf,
+        senha: cred.senha,
         mode: values.headed ? "headed" : values.headless ? "headless" : "auto",
         onStatus: (m) => console.error(`· ${m}`),
       });
@@ -77,6 +83,25 @@ async function main() {
       const store = new FileTokenStore(values.session);
       await store.save(session);
       return out({ ok: true, arquivo: store.path, refreshExpiraEm: session.refresh_expires_at ?? "(não informado)" });
+    }
+
+    case "credenciais": {
+      const m = await import("@b3-investidor/login");
+      const sub = args[0] ?? "status";
+      if (sub === "salvar") {
+        const cpf = (await m.promptHidden("CPF/CNPJ: ")).replace(/\D/g, "");
+        if (cpf.length !== 11 && cpf.length !== 14) throw new Error("CPF/CNPJ deve ter 11 ou 14 dígitos.");
+        const senha = await m.promptHidden("Senha da Área do Investidor: ");
+        if (!senha) throw new Error("Senha vazia.");
+        m.saveCredentials({ cpf, senha });
+        return out({ ok: true, cofre: m.vaultName() });
+      }
+      if (sub === "apagar") return out({ ok: true, apagadas: m.deleteCredentials() });
+      if (sub === "status") {
+        const c = m.resolveCredentials();
+        return out({ origem: c.origem, cpf: Boolean(c.cpf), senha: Boolean(c.senha), cofre: m.vaultName() });
+      }
+      throw new Error("Use: b3 credenciais salvar | status | apagar");
     }
 
     case "refresh": {

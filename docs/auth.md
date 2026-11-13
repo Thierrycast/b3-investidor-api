@@ -74,9 +74,50 @@ Só `Authorization: Bearer <access_token>`. Não há `apikey`, `ocp-apim-*` nem 
 
 O host da API (`investidor.b3.com.br`, **sem www**) não fica atrás do desafio do Cloudflare. O front (`www.`) fica: `curl` nele recebe "Just a moment...".
 
+## Login assistido (`b3 login`)
+
+```bash
+pnpm b3 credenciais salvar   # uma vez: CPF e senha digitados sem eco, cifrados no cofre do sistema
+pnpm b3 login                # abre o login, grava a sessão (24 h)
+```
+
+Como funciona (`packages/login`):
+
+1. Gera PKCE próprio e abre **direto** o `/authorize` do B2C, sem carregar `www.investidor.b3.com.br`, que fica atrás do Cloudflare.
+2. Manda `doc_hint=<CPF/CNPJ só dígitos>`. Ele é **obrigatório**: sem ele, o B2C responde "An exception has occurred". O B2C usa esse valor para escolher o fluxo; com um valor que não é o seu documento, ele cai na tela de **cadastro**. Por isso o `b3 login` sempre precisa do CPF/CNPJ: do ambiente, do cofre ou digitado na hora.
+3. Preenche CPF, aceita os termos e preenche a senha (se houver).
+4. O redirecionamento final para `https://www.investidor.b3.com.br/?code=…` é interceptado. O site não carrega; o navegador mostra uma página local "Login concluído".
+5. Troca o `code` por tokens (`grant_type=authorization_code` + `code_verifier`) e grava a sessão em arquivo 600, ou envia a um servidor com `--push`.
+
+Modos:
+
+| Modo | Quando | Comportamento |
+|---|---|---|
+| `auto` (padrão) | há CPF e senha | tenta headless; se a B3 pedir CAPTCHA, código ou mostrar erro, reabre com janela |
+| `--headed` | sempre | janela visível; a pessoa conclui o que a B3 pedir |
+| `--headless` | servidores | nunca abre janela; se precisar de pessoa, falha com `needs_human` |
+
+**O projeto nunca resolve nem contorna CAPTCHA ou código de verificação.** Quando aparecem, a pessoa conclui na janela.
+O Chrome ou o Edge instalado é usado via `playwright-core`; nenhum navegador é baixado.
+
+### Onde ficam CPF e senha
+
+Ordem de leitura: `B3_CPF`/`B3_SENHA` do ambiente e depois o cofre. Se faltar o CPF, ele é pedido no terminal, sem eco.
+
+| Sistema | Cofre | Detalhe |
+|---|---|---|
+| Windows | DPAPI (`ProtectedData`, escopo do usuário) | arquivo `~/.config/b3-investidor/credenciais.dpapi`; só o mesmo usuário do Windows decifra |
+| macOS | Keychain (`security`) | item `b3-investidor` / `credenciais` |
+| Linux | Secret Service (`secret-tool`) | precisa de sessão gráfica/keyring; em servidor, use o ambiente |
+
+- Os segredos chegam aos utilitários do sistema **por stdin**, nunca por argumento de linha de comando (não aparecem na lista de processos).
+- `b3 credenciais status` mostra só de onde vieram e se existem, nunca os valores. `b3 credenciais apagar` remove.
+- No ambiente: prefira injetar na hora (gerenciador de segredos, `systemd` `LoadCredential`, secrets do CI) a deixar a senha em `.env`.
+- Nenhum valor de CPF, senha ou token aparece em log, status ou erro.
+
 ## Capturar a sessão manualmente
 
-Enquanto o `b3 login` não fica pronto:
+Alternativa sem o `b3 login` (por exemplo, para depurar):
 
 1. Abra o Chrome, pressione F12 → aba **Network**, marque **Preserve log** e filtre por `token`.
 2. Entre em https://www.investidor.b3.com.br e faça login normalmente.

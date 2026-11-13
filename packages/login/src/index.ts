@@ -140,7 +140,7 @@ async function attempt(headless: boolean, o: LoginOptions): Promise<B3Session> {
     const page = await context.newPage();
     status("abrindo o login da B3");
     await page.goto(
-      buildAuthorizeUrl({ challenge: pkce.challenge, state, nonce: randomUUID(), docHint: digits(o.cpf) || "0" }),
+      buildAuthorizeUrl({ challenge: pkce.challenge, state, nonce: randomUUID(), docHint: digits(o.cpf) }),
       { waitUntil: "domcontentloaded", timeout: 60_000 },
     );
 
@@ -164,7 +164,7 @@ async function attempt(headless: boolean, o: LoginOptions): Promise<B3Session> {
       const timeout = o.headedTimeoutMs ?? 600_000;
       code = await Promise.race([
         codeP,
-        new Promise<never>((_, rej) => setTimeout(() => rej(new B3AuthError("Tempo esgotado esperando o login na janela.", "login_timeout", true)), timeout)),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new B3AuthError("Tempo esgotado esperando o login na janela.", "login_timeout", true)), timeout).unref()),
         new Promise<never>((_, rej) => browser.on("disconnected", () => rej(new B3AuthError("A janela foi fechada antes de concluir o login.", "login_closed", true)))),
       ]);
     }
@@ -177,9 +177,13 @@ async function attempt(headless: boolean, o: LoginOptions): Promise<B3Session> {
   }
 }
 
+export * from "./credentials";
+
 /** Faz login e devolve a sessão. Não grava nada: quem chama decide onde guardar. */
 export async function login(o: LoginOptions = {}): Promise<B3Session> {
   const mode = o.mode ?? "auto";
+  // O B2C decide o fluxo pelo doc_hint: sem o CPF/CNPJ real ele cai na tela de cadastro.
+  if (!digits(o.cpf)) throw new B3AuthError("Informe o CPF/CNPJ (B3_CPF, `b3 credenciais salvar` ou digite quando pedido).", "cpf_ausente", true);
   const canHeadless = Boolean(digits(o.cpf) && o.senha);
 
   if (mode === "headed" || (mode === "auto" && !canHeadless)) return attempt(false, o);

@@ -41,3 +41,8 @@ Depois, chamadas diretas de um servidor Linux.
 **Instabilidade**
 - `transferencia-ativos/v2/solicitacoes/pendentes` deu 504 no navegador.
 - Um `EHOSTUNREACH` isolado na API. O cliente repete com backoff.
+
+## 2026-11-13 — login assistido
+
+- O `doc_hint` decide o fluxo do B2C: com um valor que não é o documento da pessoa (ex.: `0`), a tela leva ao **cadastro**, não ao login. O `b3 login` passou a exigir o CPF/CNPJ real.
+- Windows PowerShell 5 chamado de dentro do pwsh 7 herda o `PSModulePath` e não carrega `Microsoft.PowerShell.Security`. O cofre usa `ProtectedData` (.NET) direto e não repassa `PSModulePath`.

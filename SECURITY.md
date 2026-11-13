@@ -4,7 +4,8 @@
 
 - **Credenciais**:
   - O `refresh_token` fica num arquivo com modo 600, gravado de forma atômica, ou no `TokenStore` que você fornecer.
-  - A senha (opcional, só no `b3 login`) vive só na memória do processo.
+  - CPF e senha (opcionais, só no `b3 login`) vêm do ambiente ou do cofre do sistema: DPAPI no Windows, Keychain no macOS, Secret Service no Linux. São digitados sem eco e passam aos utilitários do sistema por stdin, nunca por argumento.
+  - O `b3 login` nunca resolve nem contorna CAPTCHA ou código de verificação: isso fica com a pessoa, na janela.
   - Nada disso vai para logs, saída de comandos ou respostas HTTP.
 - **Rede**: o código só fala com `b3investidor.b2clogin.com` e `investidor.b3.com.br`, além do `B3_ALERT_WEBHOOK`, se você configurar um. Sem telemetria.
 - **Servidor**:
@@ -18,7 +19,7 @@
 
 - Exponha o servidor para fora da sua máquina só atrás de HTTPS e com uma chave forte.
 - Quem tem o `session.json` ou a `x-api-key` lê a sua carteira e o seu cadastro.
-- Prefira não deixar a senha no `.env` depois do primeiro login.
+- Prefira `b3 credenciais salvar` ou injeção na hora (gerenciador de segredos) a deixar a senha em `.env`.
 
 ## Reportar uma vulnerabilidade
 
