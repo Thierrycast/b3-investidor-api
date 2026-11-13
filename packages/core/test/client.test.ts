@@ -140,6 +140,38 @@ describe("rotas", () => {
     const c = new B3Client({ store: new MemoryTokenStore({ refresh_token: "x" }), fetch: f });
     expect(await c.call("proventosAnos")).toBeNull();
   });
+
+  it("rotas bridgewise substituem id no caminho e enviam busca e período", async () => {
+    const chamadasFeitas: string[] = [];
+    const { f } = fakeFetch({
+      "/oauth2/v2.0/token": tokenOk,
+      "/pesquisa-ativos": (url) => {
+        chamadasFeitas.push(url.pathname + url.search);
+        return json([{ ticker: "VALE3" }]);
+      },
+      "/PETR4/cotacao": (url) => {
+        chamadasFeitas.push(url.pathname);
+        return json({ preco: 38.5 });
+      },
+      "/PETR4/analise-fundamentalista": (url) => {
+        chamadasFeitas.push(url.pathname + url.search);
+        return json({ pl: 4.2 });
+      },
+    });
+    const cliente = new B3Client({ store: new MemoryTokenStore({ refresh_token: "x" }), fetch: f });
+    const lista = await cliente.call("bridgewisePesquisaAtivos", { busca: "PETR" });
+    expect(lista).toEqual([{ ticker: "VALE3" }]);
+    expect(chamadasFeitas[0]).toContain("busca=PETR");
+
+    const cotacao = await cliente.call("bridgewiseCotacao", { id: "PETR4" });
+    expect(cotacao).toEqual({ preco: 38.5 });
+    expect(chamadasFeitas[1]).toContain("/PETR4/cotacao");
+
+    const fundamentalista = await cliente.call("bridgewiseAnaliseFundamentalista", { id: "PETR4", periodoCotacao: "12M" });
+    expect(fundamentalista).toEqual({ pl: 4.2 });
+    expect(chamadasFeitas[2]).toContain("/PETR4/analise-fundamentalista");
+    expect(chamadasFeitas[2]).toContain("periodoCotacao=12M");
+  });
 });
 
 describe("shape e diff", () => {

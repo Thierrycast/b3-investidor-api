@@ -18,7 +18,7 @@ export interface CargaContext {
 
 export interface EndpointDef<Q extends z.ZodObject = z.ZodObject, R extends z.ZodType = z.ZodType> {
   id: string;
-  tag: "Sistema" | "Investidor" | "Carteira" | "Extratos" | "Proventos" | "Início";
+  tag: "Sistema" | "Investidor" | "Carteira" | "Extratos" | "Proventos" | "Início" | "Mercado" | "Renda Fixa" | "Transferência";
   summary: string;
   description?: string;
   /** Caminho na API da B3. `{param}` é substituído pelo parâmetro de mesmo nome. */
@@ -45,6 +45,7 @@ export const daysBefore = (isoDate: string, days: number) =>
 const mesAno = ({ carga }: CargaContext) => ({ mes: Number(carga.slice(5, 7)), ano: Number(carga.slice(0, 4)) });
 
 const EP = "/negocio-eventosprovisionados/api/extrato-eventos-provisionados";
+const BW = "/negocio-empresa/api/empresa/v1/bridgewise";
 
 export const endpoints = {
   ultimaCarga: def({
@@ -306,6 +307,112 @@ export const endpoints = {
     query: z.object({}),
     response: z.record(z.string(), z.boolean()),
     status: "confirmado",
+  }),
+
+  // ---------- mercado (bridgewise) ----------
+
+  bridgewiseListaAtivos: def({
+    id: "bridgewiseListaAtivos",
+    tag: "Mercado",
+    summary: "Lista de ativos disponíveis no Bridgewise",
+    b3Path: `${BW}/lista-ativos`,
+    route: "/v1/mercado/bridgewise/lista-ativos",
+    query: z.object({}),
+    response: S.ListaNaoMapeada,
+    status: "campos-pendentes",
+  }),
+
+  bridgewisePesquisaAtivos: def({
+    id: "bridgewisePesquisaAtivos",
+    tag: "Mercado",
+    summary: "Pesquisa de ativos no Bridgewise",
+    b3Path: `${BW}/pesquisa-ativos`,
+    route: "/v1/mercado/bridgewise/pesquisa-ativos",
+    query: z.object({
+      busca: z.string().describe("Termo para pesquisa de ativos"),
+    }),
+    response: S.ListaNaoMapeada,
+    status: "campos-pendentes",
+  }),
+
+  bridgewiseCotacao: def({
+    id: "bridgewiseCotacao",
+    tag: "Mercado",
+    summary: "Cotação de ativo no Bridgewise",
+    b3Path: `${BW}/{id}/cotacao`,
+    route: "/v1/mercado/bridgewise/cotacao",
+    query: z.object({
+      id: z.string().describe("Identificador do ativo / ticker"),
+    }),
+    response: S.NaoMapeado,
+    status: "campos-pendentes",
+  }),
+
+  bridgewiseDadosAtivo: def({
+    id: "bridgewiseDadosAtivo",
+    tag: "Mercado",
+    summary: "Dados cadastrais e gerais do ativo no Bridgewise",
+    b3Path: `${BW}/{id}/dados-ativo`,
+    route: "/v1/mercado/bridgewise/dados-ativo",
+    query: z.object({
+      id: z.string().describe("Identificador do ativo / ticker"),
+    }),
+    response: S.NaoMapeado,
+    status: "campos-pendentes",
+  }),
+
+  bridgewiseDesempenho: def({
+    id: "bridgewiseDesempenho",
+    tag: "Mercado",
+    summary: "Desempenho histórico do ativo no Bridgewise",
+    b3Path: `${BW}/{id}/desempenho`,
+    route: "/v1/mercado/bridgewise/desempenho",
+    query: z.object({
+      id: z.string().describe("Identificador do ativo / ticker"),
+    }),
+    response: S.NaoMapeado,
+    status: "campos-pendentes",
+  }),
+
+  bridgewiseComparativo: def({
+    id: "bridgewiseComparativo",
+    tag: "Mercado",
+    summary: "Comparativo de ativos no Bridgewise",
+    b3Path: `${BW}/{id}/comparativo`,
+    route: "/v1/mercado/bridgewise/comparativo",
+    query: z.object({
+      id: z.string().describe("Identificador do ativo / ticker"),
+    }),
+    response: S.NaoMapeado,
+    status: "campos-pendentes",
+  }),
+
+  bridgewiseAnaliseFundamentalista: def({
+    id: "bridgewiseAnaliseFundamentalista",
+    tag: "Mercado",
+    summary: "Análise fundamentalista do ativo no Bridgewise",
+    b3Path: `${BW}/{id}/analise-fundamentalista`,
+    route: "/v1/mercado/bridgewise/analise-fundamentalista",
+    query: z.object({
+      id: z.string().describe("Identificador do ativo / ticker"),
+      periodoCotacao: z.string().optional().describe("Período da cotação"),
+    }),
+    response: S.NaoMapeado,
+    status: "campos-pendentes",
+  }),
+
+  bridgewiseAnaliseTecnica: def({
+    id: "bridgewiseAnaliseTecnica",
+    tag: "Mercado",
+    summary: "Análise técnica do ativo no Bridgewise",
+    b3Path: `${BW}/{id}/analise-tecnica`,
+    route: "/v1/mercado/bridgewise/analise-tecnica",
+    query: z.object({
+      id: z.string().describe("Identificador do ativo / ticker"),
+      periodoCotacao: z.string().optional().describe("Período da cotação"),
+    }),
+    response: S.NaoMapeado,
+    status: "campos-pendentes",
   }),
 } as const;
 
