@@ -46,6 +46,8 @@ const mesAno = ({ carga }: CargaContext) => ({ mes: Number(carga.slice(5, 7)), a
 
 const EP = "/negocio-eventosprovisionados/api/extrato-eventos-provisionados";
 const BW = "/negocio-empresa/api/empresa/v1/bridgewise";
+const RF = "/negocio-rendafixa/api/rendafixa/v1";
+const CALCRF = "/negocio-calcrf/api/calcrf/v1";
 
 export const endpoints = {
   ultimaCarga: def({
@@ -411,6 +413,108 @@ export const endpoints = {
       id: z.string().describe("Identificador do ativo / ticker"),
       periodoCotacao: z.string().optional().describe("Período da cotação"),
     }),
+    response: S.NaoMapeado,
+    status: "campos-pendentes",
+  }),
+
+  // ---------- renda fixa e títulos ----------
+
+  rendaFixaAtivos: def({
+    id: "rendaFixaAtivos",
+    tag: "Renda Fixa",
+    summary: "Lista de ativos de renda fixa",
+    b3Path: `${RF}/ativos`,
+    route: "/v1/renda-fixa/ativos",
+    query: z.object({
+      CodigoInstrumento: z.string().optional().describe("Código do instrumento financeiro"),
+      Pagina: S.PaginaParam.optional().describe("Página da consulta"),
+      TamanhoPagina: z.coerce.number().int().optional().describe("Quantidade de itens por página"),
+    }),
+    response: S.NaoMapeado,
+    status: "campos-pendentes",
+  }),
+
+  rendaFixaNegocioConsolidado: def({
+    id: "rendaFixaNegocioConsolidado",
+    tag: "Renda Fixa",
+    summary: "Negócios consolidados de renda fixa",
+    b3Path: `${RF}/negocio-consolidado`,
+    route: "/v1/renda-fixa/negocio-consolidado",
+    query: z.object({
+      DataNegocio: S.DataParam.optional().describe("Data do negócio (AAAA-MM-DD)"),
+      Pagina: S.PaginaParam.optional().describe("Página da consulta"),
+    }),
+    response: S.NaoMapeado,
+    status: "campos-pendentes",
+  }),
+
+  rendaFixaNegocioANegocio: def({
+    id: "rendaFixaNegocioANegocio",
+    tag: "Renda Fixa",
+    summary: "Negócios operação a operação de renda fixa",
+    b3Path: `${RF}/negocio-a-negocio`,
+    route: "/v1/renda-fixa/negocio-a-negocio",
+    query: z.object({}),
+    response: S.NaoMapeado,
+    status: "campos-pendentes",
+  }),
+
+  calcRFTitulosPublicos: def({
+    id: "calcRFTitulosPublicos",
+    tag: "Renda Fixa",
+    summary: "Lista de títulos públicos da calculadora de renda fixa",
+    b3Path: `${CALCRF}/titulos/lista-titulos-publicos`,
+    route: "/v1/renda-fixa/calculadora/titulos-publicos",
+    query: z.object({}),
+    response: S.ListaNaoMapeada,
+    status: "campos-pendentes",
+  }),
+
+  calcRFTitulosDebentures: def({
+    id: "calcRFTitulosDebentures",
+    tag: "Renda Fixa",
+    summary: "Lista de debêntures da calculadora de renda fixa",
+    b3Path: `${CALCRF}/titulos/lista-titulos-debentures`,
+    route: "/v1/renda-fixa/calculadora/titulos-debentures",
+    query: z.object({}),
+    response: S.ListaNaoMapeada,
+    status: "campos-pendentes",
+  }),
+
+  calcRFTitulosCRA: def({
+    id: "calcRFTitulosCRA",
+    tag: "Renda Fixa",
+    summary: "Lista de títulos CRA da calculadora de renda fixa",
+    b3Path: `${CALCRF}/titulos/lista-titulos-cra`,
+    route: "/v1/renda-fixa/calculadora/titulos-cra",
+    query: z.object({
+      dataInicio: S.DataParam.optional().describe("Data de início (AAAA-MM-DD)"),
+      dataFim: S.DataParam.optional().describe("Data de fim (AAAA-MM-DD)"),
+    }),
+    response: S.ListaNaoMapeada,
+    status: "campos-pendentes",
+  }),
+
+  calcRFTitulosCRI: def({
+    id: "calcRFTitulosCRI",
+    tag: "Renda Fixa",
+    summary: "Lista de títulos CRI da calculadora de renda fixa",
+    b3Path: `${CALCRF}/titulos/lista-titulos-cri`,
+    route: "/v1/renda-fixa/calculadora/titulos-cri",
+    query: z.object({
+      dataInicio: S.DataParam.optional().describe("Data de início (AAAA-MM-DD)"),
+    }),
+    response: S.ListaNaoMapeada,
+    status: "campos-pendentes",
+  }),
+
+  calcRFCalculoPU: def({
+    id: "calcRFCalculoPU",
+    tag: "Renda Fixa",
+    summary: "Cálculo de preço unitário (PU) de renda fixa",
+    b3Path: `${CALCRF}/calculadora-pu/realizar-calculo-pu`,
+    route: "/v1/renda-fixa/calculadora/calculo-pu",
+    query: z.object({}),
     response: S.NaoMapeado,
     status: "campos-pendentes",
   }),

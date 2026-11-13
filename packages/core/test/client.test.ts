@@ -172,6 +172,41 @@ describe("rotas", () => {
     expect(chamadasFeitas[2]).toContain("/PETR4/analise-fundamentalista");
     expect(chamadasFeitas[2]).toContain("periodoCotacao=12M");
   });
+
+  it("rotas de renda fixa e calculadora repassam parâmetros corretos", async () => {
+    const chamadasFeitas: string[] = [];
+    const { f } = fakeFetch({
+      "/oauth2/v2.0/token": tokenOk,
+      "/rendafixa/v1/ativos": (url) => {
+        chamadasFeitas.push(url.pathname + url.search);
+        return json({ totalRegistros: 10 });
+      },
+      "/rendafixa/v1/negocio-consolidado": (url) => {
+        chamadasFeitas.push(url.pathname + url.search);
+        return json({ consolidado: true });
+      },
+      "/titulos/lista-titulos-cra": (url) => {
+        chamadasFeitas.push(url.pathname + url.search);
+        return json([{ codigoCRA: "CRA123" }]);
+      },
+    });
+    const cliente = new B3Client({ store: new MemoryTokenStore({ refresh_token: "x" }), fetch: f });
+
+    const ativos = await cliente.call("rendaFixaAtivos", { CodigoInstrumento: "CDB", Pagina: 2, TamanhoPagina: 50 });
+    expect(ativos).toEqual({ totalRegistros: 10 });
+    expect(chamadasFeitas[0]).toContain("CodigoInstrumento=CDB");
+    expect(chamadasFeitas[0]).toContain("Pagina=2");
+    expect(chamadasFeitas[0]).toContain("TamanhoPagina=50");
+
+    const consolidado = await cliente.call("rendaFixaNegocioConsolidado", { DataNegocio: "2026-11-10", Pagina: 1 });
+    expect(consolidado).toEqual({ consolidado: true });
+    expect(chamadasFeitas[1]).toContain("DataNegocio=2026-11-10");
+
+    const titulosCRA = await cliente.call("calcRFTitulosCRA", { dataInicio: "2026-01-01", dataFim: "2026-11-10" });
+    expect(titulosCRA).toEqual([{ codigoCRA: "CRA123" }]);
+    expect(chamadasFeitas[2]).toContain("dataInicio=2026-01-01");
+    expect(chamadasFeitas[2]).toContain("dataFim=2026-11-10");
+  });
 });
 
 describe("shape e diff", () => {
