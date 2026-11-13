@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import {
   B3AuthError,
@@ -53,6 +54,9 @@ const { values, positionals } = parseArgs({
 });
 
 const [cmd, ...args] = positionals;
+// Normaliza caminhos (no Windows, o pnpm repassa argumentos com barras duplicadas).
+if (values.session) values.session = resolve(values.session);
+if (values.debug) values.debug = resolve(values.debug);
 const client = () => new B3Client({ store: new FileTokenStore(values.session) });
 const out = (o: unknown) => console.log(values.json ? JSON.stringify(o) : typeof o === "string" ? o : JSON.stringify(o, null, 2));
 

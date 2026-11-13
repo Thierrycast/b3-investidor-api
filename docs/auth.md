@@ -86,8 +86,10 @@ Como funciona (`packages/login`):
 1. Gera PKCE próprio e abre **direto** o `/authorize` do B2C, sem carregar `www.investidor.b3.com.br`, que fica atrás do Cloudflare.
 2. Manda `doc_hint=<CPF/CNPJ só dígitos>`. Ele é **obrigatório**: sem ele, o B2C responde "An exception has occurred". O B2C usa esse valor para escolher o fluxo; com um valor que não é o seu documento, ele cai na tela de **cadastro**. Por isso o `b3 login` sempre precisa do CPF/CNPJ: do ambiente, do cofre ou digitado na hora.
 3. Preenche CPF, aceita os termos e preenche a senha (se houver).
-4. O redirecionamento final para `https://www.investidor.b3.com.br/?code=…` é interceptado. O site não carrega; o navegador mostra uma página local "Login concluído".
-5. Troca o `code` por tokens (`grant_type=authorization_code` + `code_verifier`) e grava a sessão em arquivo 600, ou envia a um servidor com `--push`.
+4. **Código por e-mail** (tela "Código de autenticação", observada em 13/11/2026): a B3 envia um código de 6 dígitos ao e-mail cadastrado. No terminal, o `b3 login` pede o código (aparece como `******`) e o digita tecla a tecla.
+   O campo visível (`INPUT_OTP_EMAIL`) é uma fachada; a página copia o valor para o campo real do B2C (`VerificationCode`, oculto) em eventos de tecla. Por isso colar de uma vez não funciona. Depois clica só em `Btn_VERIFY_CODE`, nunca em "Enviar Novo código".
+5. O redirecionamento final para `https://www.investidor.b3.com.br/?code=…` é lido (qualquer requisição ou navegação para essa origem) e respondido com uma página local "Login concluído". O site não carrega.
+6. Troca o `code` por tokens (`grant_type=authorization_code` + `code_verifier`) e grava a sessão em arquivo 600, ou envia a um servidor com `--push`.
 
 Modos:
 
@@ -97,7 +99,9 @@ Modos:
 | `--headed` | sempre | janela visível; a pessoa conclui o que a B3 pedir |
 | `--headless` | servidores | nunca abre janela; se precisar de pessoa, falha com `needs_human` |
 
-**O projeto nunca resolve nem contorna CAPTCHA ou código de verificação.** Quando aparecem, a pessoa conclui na janela.
+**O projeto nunca resolve nem contorna CAPTCHA ou código de verificação.** O código vem da pessoa (terminal ou janela); CAPTCHA, se aparecer, só na janela.
+Sem terminal interativo (ex.: rodando por outro programa), o código também vai para a janela.
+`--debug <pasta>` grava a estrutura de cada tela (ids, tipos, textos de botão, nunca valores), útil quando a B3 mudar o fluxo.
 O Chrome ou o Edge instalado é usado via `playwright-core`; nenhum navegador é baixado.
 
 ### Onde ficam CPF e senha

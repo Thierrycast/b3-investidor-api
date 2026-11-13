@@ -13,9 +13,9 @@ Estado em 2026-11-13. Ajude onde puder: veja [CONTRIBUTING.md](CONTRIBUTING.md).
 ## Em andamento
 
 - [x] Cofre de credenciais (`b3 credenciais`): DPAPI, Keychain, libsecret
-- [ ] **`b3 login`**: implementado; falta validar o fluxo completo depois da senha (telas de código e confirmação de dispositivo).
-  - Com CPF e senha, tenta headless. Se aparecer CAPTCHA, código de verificação ou desafio, abre a janela para a pessoa concluir. **Nunca contorna desafio.**
-  - `--push` envia a sessão para um servidor remoto (`POST /v1/session`).
+- [x] **`b3 login`**: validado em 13/11/2026 sem janela (CPF → senha → código por e-mail digitado no terminal) e com janela.
+  - CAPTCHA ou tela desconhecida → janela para a pessoa concluir. **Nunca contorna desafio.**
+- [ ] `b3 login --push` contra um servidor remoto (implementado, não testado de ponta a ponta)
 - [ ] **`b3 discover`**: abre o portal num navegador monitorado e registra rotas, nomes de parâmetros e árvores de tipos enquanto a pessoa navega.
 - [ ] Build publicável (`dist/` + tipos) e publicação no npm.
 
