@@ -5,7 +5,7 @@ Estado em 2026-11-13. Ajude onde puder: veja [CONTRIBUTING.md](CONTRIBUTING.md).
 ## Pronto
 
 - [x] Autenticação: renovação fora do navegador, rotação do token, erros claros (`needsLogin`)
-- [x] 20 rotas no registro, com schemas, paginação e limite pela data de carga
+- [x] 40 rotas no registro (20 iniciais + 20 de mercado Bridgewise, renda fixa, balcão e tabelas de apoio), com schemas, paginação e limite pela data de carga
 - [x] API HTTP com Swagger, `x-api-key` e renovação automática com aviso por webhook
 - [x] `b3 probe`, `b3 shapes`, `b3 endpoints`, `b3 serve`
 - [x] Documentação gerada do registro (`docs/endpoints.md`)
@@ -18,8 +18,9 @@ Estado em 2026-11-13. Ajude onde puder: veja [CONTRIBUTING.md](CONTRIBUTING.md).
 - [x] Login automático no servidor: sessão vencida → login sozinho; código do e-mail via `POST /v1/login/codigo` (testes sintéticos; falta teste ao vivo)
 - [ ] `b3 login --push` contra um servidor remoto (implementado, não testado de ponta a ponta)
 - [x] **`b3 discover`**: abre o portal no Chrome da pessoa (perfil próprio, CDP) e registra rotas, nomes de parâmetros e árvores de tipos enquanto ela navega (testes do modelo de rota; falta rodada ao vivo).
-- [x] **Mapa dos micro-frontends** (13/11/2026): 135 rotas em [docs/mapa-rotas.md](docs/mapa-rotas.md), vindas do código dos 21 micro-frontends e da navegação ao vivo.
+- [x] **Mapa dos micro-frontends** (13/11/2026): 135 rotas em [docs/mapa-rotas.md](docs/mapa-rotas.md), vindas do código dos 21 micro-frontends e da navegação ao vivo (86 de leitura fora do registro).
 - [ ] **Implementar as rotas de leitura do mapa** no registro. Prioridades:
+  - [x] 20 rotas de leitura implementadas em 13/11/2026 (mercado Bridgewise, renda fixa, calculadora calcrf, balcão e tabelas de apoio);
   - [ ] extratos de ofertas públicas, garantias e eventos a receber;
   - [ ] calendário de eventos;
   - [ ] informe de rendimentos e downloads de relatório (PDF/planilha);

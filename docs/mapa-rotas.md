@@ -58,7 +58,7 @@ Telas que carregaram na navegação: `/extrato/{movimentacao,negociacao,eventos-
 
 | | Método | Rota | Parâmetros |
 |---|---|---|---|
-| 🟢 [200] | GET | `/api/transferencia-ativos/v3/solicitacoes/listados-balcao` | `pagina` `qtdRegistros` |
+| ✅ `transferenciaListadosBalcao` | GET | `/api/transferencia-ativos/v3/solicitacoes/listados-balcao` | `pagina` `qtdRegistros` |
 
 ## calcrf
 
@@ -66,27 +66,27 @@ Telas que carregaram na navegação: `/extrato/{movimentacao,negociacao,eventos-
 |---|---|---|---|
 | 📄 | ? | `/negocio-calcrf/api/calcrf/v1/calculadora-di/lista-periodo-disponivel` | — |
 | 📄 | ? | `/negocio-calcrf/api/calcrf/v1/calculadora-di/realizar-calculo-di` | — |
-| 📄 | GET | `/negocio-calcrf/api/calcrf/v1/calculadora-pu/realizar-calculo-pu` | — |
+| ✅ `calcRFCalculoPU` | GET | `/negocio-calcrf/api/calcrf/v1/calculadora-pu/realizar-calculo-pu` | — |
 | 📄 | ? | `/negocio-calcrf/api/calcrf/v1/calculadora-rendimento/realizar-calculo-rendimento` | — |
 | 📄 | ? | `/negocio-calcrf/api/calcrf/v1/titulos` | — |
-| 📄 | GET | `/negocio-calcrf/api/calcrf/v1/titulos/lista-titulos-cra` | `dataFim` `dataInicio` |
-| 📄 | GET | `/negocio-calcrf/api/calcrf/v1/titulos/lista-titulos-cri` | `dataInicio` |
-| 📄 | ? | `/negocio-calcrf/api/calcrf/v1/titulos/lista-titulos-debentures` | — |
-| 📄 | ? | `/negocio-calcrf/api/calcrf/v1/titulos/lista-titulos-publicos` | — |
+| ✅ `calcRFTitulosCRA` | GET | `/negocio-calcrf/api/calcrf/v1/titulos/lista-titulos-cra` | `dataFim` `dataInicio` |
+| ✅ `calcRFTitulosCRI` | GET | `/negocio-calcrf/api/calcrf/v1/titulos/lista-titulos-cri` | `dataInicio` |
+| ✅ `calcRFTitulosDebentures` | GET | `/negocio-calcrf/api/calcrf/v1/titulos/lista-titulos-debentures` | — |
+| ✅ `calcRFTitulosPublicos` | GET | `/negocio-calcrf/api/calcrf/v1/titulos/lista-titulos-publicos` | — |
 
 ## empresa
 
 | | Método | Rota | Parâmetros |
 |---|---|---|---|
-| 📄 | GET | `/negocio-empresa/api/empresa/v1/bridgewise/{id}/analise-fundamentalista` | `periodoCotacao` |
-| 📄 | GET | `/negocio-empresa/api/empresa/v1/bridgewise/{id}/analise-tecnica` | `periodoCotacao` |
-| 📄 | ? | `/negocio-empresa/api/empresa/v1/bridgewise/{id}/comparativo` | — |
-| 📄 | ? | `/negocio-empresa/api/empresa/v1/bridgewise/{id}/cotacao` | — |
-| 📄 | ? | `/negocio-empresa/api/empresa/v1/bridgewise/{id}/dados-ativo` | — |
-| 📄 | ? | `/negocio-empresa/api/empresa/v1/bridgewise/{id}/desempenho` | — |
+| ✅ `bridgewiseAnaliseFundamentalista` | GET | `/negocio-empresa/api/empresa/v1/bridgewise/{id}/analise-fundamentalista` | `periodoCotacao` |
+| ✅ `bridgewiseAnaliseTecnica` | GET | `/negocio-empresa/api/empresa/v1/bridgewise/{id}/analise-tecnica` | `periodoCotacao` |
+| ✅ `bridgewiseComparativo` | GET | `/negocio-empresa/api/empresa/v1/bridgewise/{id}/comparativo` | — |
+| ✅ `bridgewiseCotacao` | GET | `/negocio-empresa/api/empresa/v1/bridgewise/{id}/cotacao` | — |
+| ✅ `bridgewiseDadosAtivo` | GET | `/negocio-empresa/api/empresa/v1/bridgewise/{id}/dados-ativo` | — |
+| ✅ `bridgewiseDesempenho` | GET | `/negocio-empresa/api/empresa/v1/bridgewise/{id}/desempenho` | — |
 | 📄 | GET | `/negocio-empresa/api/empresa/v1/bridgewise/access-token` | `codChave` `pagina` `tamanho` |
-| 📄 | ? | `/negocio-empresa/api/empresa/v1/bridgewise/lista-ativos` | — |
-| 📄 | ? | `/negocio-empresa/api/empresa/v1/bridgewise/pesquisa-ativos` | `busca` |
+| ✅ `bridgewiseListaAtivos` | GET | `/negocio-empresa/api/empresa/v1/bridgewise/lista-ativos` | — |
+| ✅ `bridgewisePesquisaAtivos` | GET | `/negocio-empresa/api/empresa/v1/bridgewise/pesquisa-ativos` | `busca` |
 | 📄 | GET/POST | `/negocio-empresa/api/empresa/v1/empresa/consultar-aceite` | `codChave` `pagina` `tamanho` |
 | 📄 | GET/POST | `/negocio-empresa/api/empresa/v1/empresa/consultar-ativos` | `codChave` `pagina` `tamanho` |
 | 📄 | GET/POST | `/negocio-empresa/api/empresa/v1/empresa/salvar-aceite` | `codChave` `pagina` `tamanho` |
@@ -95,7 +95,7 @@ Telas que carregaram na navegação: `/extrato/{movimentacao,negociacao,eventos-
 
 | | Método | Rota | Parâmetros |
 |---|---|---|---|
-| 📄 | ? | `/negocio-eventosprovisionados/api/extrato-eventos-provisionados/v1.1/tipos-eventos` | — |
+| ✅ `tiposEventos` | GET | `/negocio-eventosprovisionados/api/extrato-eventos-provisionados/v1.1/tipos-eventos` | — |
 | ✅ `proventos` | GET | `/negocio-eventosprovisionados/api/extrato-eventos-provisionados/v1/proventos/investidor` | `ano` `mes` |
 | ✅ `proventosAnos` | GET | `/negocio-eventosprovisionados/api/extrato-eventos-provisionados/v1/proventos/investidor/anos` | `agrupamento` `ano` `codigoTipoProduto` `mes` |
 | ✅ `proventosMeses` | GET | `/negocio-eventosprovisionados/api/extrato-eventos-provisionados/v1/proventos/investidor/meses` | `agrupamento` `ano` `mes` |
@@ -151,7 +151,7 @@ Telas que carregaram na navegação: `/extrato/{movimentacao,negociacao,eventos-
 | ✋ | POST | `/negocio-investidor/api/investidor/v1/autorizacao/calculadora-ir` | — |
 | 📄 | PUT/GET | `/negocio-investidor/api/investidor/v1/cadastro/aplicativos` | — |
 | 📄 | GET/PATCH | `/negocio-investidor/api/investidor/v1/cadastro/email-conta/quarentena` | — |
-| 📄 | ? | `/negocio-investidor/api/investidor/v1/instituicoes` | — |
+| ✅ `instituicoes` | GET | `/negocio-investidor/api/investidor/v1/instituicoes` | — |
 | 📄 | ? | `/negocio-investidor/api/investidor/v1/instituicoes/simplificada` | — |
 | 📄 | GET | `/negocio-investidor/api/investidor/v1/mcp/aplicativos` | — |
 | 📄 | GET | `/negocio-investidor/api/investidor/v1/notificacoes/leitura` | `lido` `quantidadeNotificacoes` `ultimaRowkey` |
@@ -159,7 +159,7 @@ Telas que carregaram na navegação: `/extrato/{movimentacao,negociacao,eventos-
 | 📄 | ? | `/negocio-investidor/api/investidor/v1/produtos` | — |
 | 📄 | GET | `/negocio-investidor/api/investidor/v1/produtos/carteira-atual` | — |
 | 📄 | PUT/GET | `/negocio-investidor/api/investidor/v1/solicitacoes` | — |
-| 📄 | ? | `/negocio-investidor/api/investidor/v1/tipos-movimentacoes` | — |
+| ✅ `tiposMovimentacoes` | GET | `/negocio-investidor/api/investidor/v1/tipos-movimentacoes` | — |
 | 🟢 [200] | GET | `/negocio-investidor/api/investidor/v2/banner` | `quantidadeItens` `tipoBanner` |
 | ✋ | POST/PATCH | `/negocio-investidor/api/investidor/v2/cadastro/configuracao/whats-app` | — |
 | ✋ | POST/PATCH | `/negocio-investidor/api/investidor/v2/opt-in-whats-app/codigo` | — |
@@ -228,10 +228,10 @@ Telas que carregaram na navegação: `/extrato/{movimentacao,negociacao,eventos-
 
 | | Método | Rota | Parâmetros |
 |---|---|---|---|
-| 📄 | ? | `/negocio-rendafixa/api/rendafixa/v1/ativos` | `CodigoInstrumento` `Pagina` `TamanhoPagina` |
+| ✅ `rendaFixaAtivos` | GET | `/negocio-rendafixa/api/rendafixa/v1/ativos` | `CodigoInstrumento` `Pagina` `TamanhoPagina` |
 | 📄 | GET | `/negocio-rendafixa/api/rendafixa/v1/gpt/resposta` | `Pergunta` `SessionId` |
-| 📄 | ? | `/negocio-rendafixa/api/rendafixa/v1/negocio-a-negocio` | — |
-| 📄 | ? | `/negocio-rendafixa/api/rendafixa/v1/negocio-consolidado` | `DataNegocio` `Pagina` |
+| ✅ `rendaFixaNegocioANegocio` | GET | `/negocio-rendafixa/api/rendafixa/v1/negocio-a-negocio` | — |
+| ✅ `rendaFixaNegocioConsolidado` | GET | `/negocio-rendafixa/api/rendafixa/v1/negocio-consolidado` | `DataNegocio` `Pagina` |
 
 ## sistema
 
@@ -264,6 +264,6 @@ Telas que carregaram na navegação: `/extrato/{movimentacao,negociacao,eventos-
 | 🟢 [200] | GET | `/negocio-voto/api/voto/v3/assembleia/investidor` | `dataFim` `dataInicio` `filtrarVotadas` `paginaAtual` `situacaoAssembleia` `tamanhoPagina` `tipoAssembleia` |
 
 ---
-135 rotas no mapa; 106 de leitura ainda fora do registro.
+135 rotas no mapa; 86 de leitura ainda fora do registro.
 
 *Gerado por: Claude Code (claude-opus-5-5) — 2026-11-13.*
