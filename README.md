@@ -218,6 +218,7 @@ Tudo no `.env` (copie de [`.env.example`](.env.example)). O essencial:
 | `B3_API_KEY` | Chave do header `x-api-key` (mínimo 16 caracteres) | **obrigatória** no `serve` |
 | `B3_CPF` · `B3_SENHA` | Login automático. Alternativa mais segura: `b3 credenciais salvar` | cofre do sistema |
 | `B3_SESSION_FILE` | Onde fica o `refresh_token` | `~/.config/b3-investidor/session.json` |
+| `B3_CHROMIUM_PATH` | Navegador do login sem janela (servidor/container sem Chrome) | Chrome/Edge, depois o Chromium do sistema |
 | `B3_HOST` · `B3_PORT` | Onde o servidor escuta | `127.0.0.1` · `8790` |
 | `B3_AUTO_LOGIN` | `0` desliga o login automático | `1` |
 | `B3_ALERT_WEBHOOK` | Recebe um `POST` quando falta o código, o login falha ou a sessão está perto de vencer | vazio |

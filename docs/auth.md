@@ -18,10 +18,15 @@ Esses valores são públicos: qualquer pessoa os vê na barra de endereço ao ab
 
 1. `GET /oauth2/v2.0/authorize?p=B2C_1A_SIGN_IN&client_id=…&response_type=code&code_challenge=…&code_challenge_method=S256&scope=…&redirect_uri=…&state=…&nonce=…`
    O `/authorize` também leva `prompt`, `generationTime` e `doc_hint`.
-2. As telas da política (CPF, senha, eventuais desafios) fazem `POST …/B2C_1A_SIGN_IN/SelfAsserted`.
+2. As telas da política fazem, em ordem (observado em 14/11/2026, só nomes):
+   - `POST …/B2C_1A_SIGN_IN/SelfAsserted?tx&p` com `signInName`, `password`, `g-recaptcha-response-toms`, `NOME_FINTECH`, `userAgent`, `session_token`, `request_type` → `GET …/api/SelfAsserted/confirmed`;
+   - código por e-mail: `POST …/SelfAsserted/DisplayControlAction/vbeta/emailVerificationControl-OTP/SendCode` (`OTP_EMAIL_VALUE`) e depois `…/VerifyCode` (`OTP_EMAIL_VALUE`, `VerificationCode`);
+   - `POST …/SelfAsserted` (campos do código + `subJourneyId`) → `GET …/api/SelfAsserted/confirmed` → **302**.
 3. Redireciona para `https://www.investidor.b3.com.br/?state=…&code=…`.
 4. O front troca o código: `POST /oauth2/v2.0/token?p=B2C_1A_SIGN_IN`, form-urlencoded, com
    `grant_type=authorization_code, client_id, scope, code, redirect_uri, code_verifier`.
+
+**Por que o login precisa de navegador.** O campo `g-recaptcha-response-toms` não vem do reCAPTCHA do Google (a página não o carrega): é o token de risco de um SDK antifraude que a página roda (`ts-platform-websdk.js`, aparentemente Transmit Security). Ele é gerado pelo script dentro do navegador e enviado junto com CPF e senha. Produzi-lo sem navegador seria burlar a proteção da B3; por isso o login usa Playwright, e só a renovação e as rotas de dados funcionam fora do navegador.
 
 Campos da resposta do `/token`: `access_token, id_token, token_type, not_before, expires_in, expires_on, resource, id_token_expires_in, profile_info, scope, refresh_token, refresh_token_expires_in`.
 
@@ -85,7 +90,8 @@ Como funciona (`packages/login`):
 
 1. Gera PKCE próprio e abre **direto** o `/authorize` do B2C, sem carregar `www.investidor.b3.com.br`, que fica atrás do Cloudflare.
 2. Manda `doc_hint=<CPF/CNPJ só dígitos>`. Ele é **obrigatório**: sem ele, o B2C responde "An exception has occurred". O B2C usa esse valor para escolher o fluxo; com um valor que não é o seu documento, ele cai na tela de **cadastro**. Por isso o `b3 login` sempre precisa do CPF/CNPJ: do ambiente, do cofre ou digitado na hora.
-3. Preenche CPF, aceita os termos e preenche a senha (se houver).
+3. Preenche CPF (se a tela aparecer; com o `doc_hint` a B3 costuma abrir direto na senha), aceita os termos e digita a senha.
+   O campo de senha visível (`PASS_INPUT`) também é uma fachada do campo real (`password`), copiado a cada tecla: preencher de uma vez (`fill`) deixa o real vazio e o envio nem sai. Por isso a senha é digitada tecla a tecla, como o código.
 4. **Código por e-mail** (tela "Código de autenticação", observada em 13/11/2026): a B3 envia um código de 6 dígitos ao e-mail cadastrado. No terminal, o `b3 login` pede o código (aparece como `******`) e o digita tecla a tecla.
    O campo visível (`INPUT_OTP_EMAIL`) é uma fachada; a página copia o valor para o campo real do B2C (`VerificationCode`, oculto) em eventos de tecla. Por isso colar de uma vez não funciona. Depois clica só em `Btn_VERIFY_CODE`; "Enviar Novo código" só é clicado quando a pessoa pede.
    **Não chegou ou apagou o e-mail?** Digite `r` (ou `reenviar`) no lugar do código: o login clica em "Enviar Novo código" e pede de novo. Vale só o código mais recente; são no máximo 3 reenvios por login e, passando disso, o comando para.

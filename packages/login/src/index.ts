@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { B3AuthError, buildAuthorizeUrl, createPkce, exchangeCode, LOGIN_REDIRECT_URI, type B3Session } from "@b3-investidor/core";
@@ -72,8 +72,15 @@ const MAX_RESENDS = 3;
 /** `r`, `reenviar` ou `resend` no lugar do código pedem um novo e-mail à B3. */
 export const isResend = (typed: string) => /^(r|reenviar|resend)$/i.test(typed.trim());
 
+/**
+ * Chromium do sistema em servidores Linux, quando não há Chrome/Edge instalado
+ * (ex.: `apk add chromium-headless-shell` no Alpine). `B3_CHROMIUM_PATH` vence.
+ */
+const LINUX_CHROMIUM = ["/usr/bin/chromium-headless-shell", "/usr/bin/chromium-browser", "/usr/bin/chromium"];
+
 async function launch(headless: boolean, o: LoginOptions): Promise<Browser> {
-  if (o.executablePath) return chromium.launch({ headless, executablePath: o.executablePath });
+  const configured = o.executablePath ?? process.env.B3_CHROMIUM_PATH?.trim();
+  if (configured) return chromium.launch({ headless, executablePath: configured, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
   const channels = o.channel ? [o.channel] : ["chrome", "msedge"];
   let last: unknown;
   for (const channel of channels) {
@@ -83,8 +90,10 @@ async function launch(headless: boolean, o: LoginOptions): Promise<Browser> {
       last = e;
     }
   }
+  const system = headless ? LINUX_CHROMIUM.find((path) => existsSync(path)) : undefined;
+  if (system) return chromium.launch({ headless, executablePath: system, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
   throw new Error(
-    `Nenhum navegador encontrado (${channels.join(", ")}). Instale o Google Chrome ou informe executablePath. Detalhe: ${String(last).slice(0, 200)}`,
+    `Nenhum navegador encontrado (${channels.join(", ")}). Instale o Google Chrome ou informe executablePath/B3_CHROMIUM_PATH. Detalhe: ${String(last).slice(0, 200)}`,
   );
 }
 
@@ -143,8 +152,10 @@ async function clickVisible(page: Page, selectors: string[]) {
 /** Preenche o que der. Nunca lança: quem decide se deu certo é a captura do `code`. */
 async function autofill(page: Page, o: LoginOptions, status: (m: string) => void) {
   const cpf = digits(o.cpf);
+  // Com o doc_hint, a B3 costuma abrir direto na senha (CPF já preenchido; visto em 14/11/2026).
+  // A tela do CPF só aparece em alguns fluxos: espera curta para não atrasar todo login.
   const doc = page.locator("#DOC_INPUT");
-  if (cpf && (await doc.waitFor({ state: "visible", timeout: 20_000 }).then(() => true, () => false))) {
+  if (cpf && (await doc.waitFor({ state: "visible", timeout: 5_000 }).then(() => true, () => false))) {
     if (!(await doc.inputValue().catch(() => ""))) await doc.fill(cpf).catch(() => {});
     const terms = page.locator("#termos_e_politicas");
     if ((await terms.count()) && !(await terms.isChecked().catch(() => true))) await terms.check().catch(() => {});
@@ -154,7 +165,11 @@ async function autofill(page: Page, o: LoginOptions, status: (m: string) => void
   if (o.senha) {
     const pwd = page.locator("input[type=password]").filter({ visible: true }).first();
     if (await pwd.waitFor({ state: "visible", timeout: 30_000 }).then(() => true, () => false)) {
-      await pwd.fill(o.senha).catch(() => {});
+      // O campo visível (PASS_INPUT) é uma fachada: o script da página copia o valor para o campo
+      // real (`password`) em eventos de tecla. `fill` não dispara tecla, o campo real fica vazio e o
+      // envio nem sai (visto em 14/11/2026). Digita tecla a tecla, como no código do e-mail.
+      await pwd.click().catch(() => {});
+      await pwd.pressSequentially(o.senha, { delay: 40 }).catch(() => {});
       status("senha preenchida; enviando");
       const before = page.url();
       await clickVisible(page, SUBMIT);
