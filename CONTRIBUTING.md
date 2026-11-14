@@ -25,7 +25,9 @@ Para cada rota, a saída tem:
 
 As rotas usam por padrão os últimos 30 dias. Se a rota vier vazia, passe um período em que você teve movimento, por exemplo editando a chamada ou usando a API (`/v1/negociacao?dataInicio=2024-01-01`).
 
-Abra uma issue **"Campos: \<rota\>"** colando só o `shape` e o `camposForaDoSchema` daquela rota. Revise antes de enviar.
+Rotas que exigem parâmetro (como o `{id}` do Bridgewise) aceitam `-q chave=valor`, repetível: `pnpm b3 shapes bridgewiseCotacao -q id=PETR3`.
+
+Abra uma issue pelo [modelo "Campos de uma rota"](https://github.com/Thierrycast/b3-investidor-api/issues/new/choose), colando só o `shape` e o `camposForaDoSchema` daquela rota. Revise antes de enviar.
 
 Se puder, diga também o que cada campo significa: compare com o que a tela do portal mostra, mas **descreva** em vez de copiar valores.
 

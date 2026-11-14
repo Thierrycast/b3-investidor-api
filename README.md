@@ -1,105 +1,247 @@
+<div align="center">
+
 # b3-investidor-api
 
-Cliente TypeScript, API HTTP com Swagger e ferramentas de descoberta para a **Área do Investidor da B3**: posição, extratos, proventos e cadastro, direto do portal, com os seus próprios dados.
+**Os seus dados da Área do Investidor da B3, numa API HTTP com Swagger.**<br>
+Posição, extratos, proventos, cotações e renda fixa. Direto do portal, com a sua própria conta.
 
-> ⚠️ **Projeto não oficial, sem nenhum vínculo com a B3.**
-> Ele conversa com a mesma API interna que o site `investidor.b3.com.br` usa no seu navegador.
-> Ela pode mudar sem aviso. Use **apenas com a sua própria conta**: é o seu direito de acesso aos seus dados (LGPD, art. 18).
-> Não há escrita: o projeto só lê.
+[![CI](https://github.com/Thierrycast/b3-investidor-api/actions/workflows/ci.yml/badge.svg)](https://github.com/Thierrycast/b3-investidor-api/actions/workflows/ci.yml)
+[![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-2ea44f)](LICENSE)
+![Node 22+](https://img.shields.io/badge/node-%E2%89%A5%2022-5fa04e?logo=nodedotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&logoColor=white)
+![Só leitura](https://img.shields.io/badge/acesso-s%C3%B3%20leitura-0969da)
+![Não oficial](https://img.shields.io/badge/B3-n%C3%A3o%20oficial-e36209)
 
-## O que tem aqui
+</div>
 
-| Pacote | Para quê |
-|---|---|
-| [`@b3-investidor/core`](packages/core) | Cliente tipado: autenticação Azure AD B2C, renovação, 20+ rotas com schemas zod, paginação e erros |
-| [`@b3-investidor/server`](packages/server) | API HTTP (Fastify) com **Swagger em `/docs`**, chave de acesso e renovação automática da sessão |
-| [`@b3-investidor/cli`](packages/cli) | `b3`: `login`, `credenciais`, `refresh`, `probe`, `shapes`, `endpoints`, `serve` |
-| [`@b3-investidor/login`](packages/login) | Login assistido (Playwright + Chrome/Edge instalado) e cofre de credenciais do sistema |
+<br>
 
-Rotas, parâmetros e campos estão em **[docs/endpoints.md](docs/endpoints.md)**. Como a autenticação funciona, em **[docs/auth.md](docs/auth.md)**.
-O diário do que foi observado, com datas, está em [docs/descobertas.md](docs/descobertas.md).
+> [!WARNING]
+> **Projeto não oficial, sem nenhum vínculo com a B3.** Ele usa a mesma API interna que o site `investidor.b3.com.br` usa no seu navegador, e ela pode mudar sem aviso.
+> Use **só com a sua própria conta**: acessar os próprios dados é um direito seu (LGPD, art. 18).
+> O projeto **só lê**. Não compra, não vende, não altera cadastro.
+
+<div align="center">
+  <img src="docs/assets/swagger-visao-geral.png" alt="Swagger da API, com o guia de uso e as rotas agrupadas por assunto" width="860">
+</div>
+
+<br>
+
+## Por que existe
+
+O portal da B3 mostra tudo o que você precisa, mas não oferece uma API. Este projeto faz o que o seu navegador faz e entrega o resultado em JSON, documentado:
+
+- 📈 **Carteira e extratos**: posição numa data, movimentações, negociações, evolução do patrimônio.
+- 💰 **Proventos**: dividendos, JCP e rendimentos, recebidos e a receber.
+- 🔎 **Mercado**: cotação, indicadores, análise fundamentalista e técnica de qualquer ativo.
+- 🏦 **Renda fixa**: títulos públicos, debêntures, CRA, CRI e cálculo de preço unitário (PU).
+- 🔐 **Sessão sem dor**: renova sozinha e refaz o login quando vence. O código do e-mail continua sendo seu.
+
+## Como funciona
+
+```mermaid
+flowchart LR
+    A["Seu app<br>curl, script, planilha"] -- "x-api-key" --> B["<b>b3-investidor-api</b><br>Fastify + Swagger"]
+    B -- "Bearer token<br>renovado sozinho" --> C["API da Área do Investidor<br>investidor.b3.com.br"]
+    B <-. "refresh_token" .-> D[("session.json<br>modo 600")]
+    E["b3 login<br>você + código do e-mail"] -. "uma vez por dia" .-> D
+```
+
+A B3 só responde a quem está logado. Por isso há um passo humano: o **código de verificação** que ela manda por e-mail a cada login. O projeto nunca contorna isso nem o CAPTCHA.
 
 ## Começo rápido
 
-Precisa de Node ≥ 22 e pnpm.
+Precisa de **Node 22+**, **pnpm** e do **Chrome ou Edge** instalado (só para o login).
 
 ```bash
-git clone <este repo> && cd b3-investidor-api
+git clone https://github.com/Thierrycast/b3-investidor-api.git
+cd b3-investidor-api
 pnpm install
-cp .env.example .env        # ajuste o que for usar
+cp .env.example .env
 ```
 
-**1. Obter a sessão** (precisa do Chrome ou do Edge instalado):
+**1. Entre uma vez**
 
 ```bash
-pnpm b3 credenciais salvar   # opcional: CPF e senha cifrados no cofre do sistema (DPAPI/Keychain/libsecret)
-pnpm b3 login                # abre o login da B3; CAPTCHA ou código, se pedidos, você conclui na janela
+pnpm b3 credenciais salvar   # opcional: guarda CPF e senha cifrados no cofre do sistema
+pnpm b3 login                # a B3 manda um código por e-mail; cole no terminal
 ```
 
-O resultado é um `session.json` (modo 600) com `refresh_token`, `client_id`, `policy` e `scope`, válido por 24 h.
-Em servidor sem tela, faça login no seu PC e envie a sessão com `pnpm b3 login --push https://servidor`.
-Detalhes e alternativa manual em [docs/auth.md](docs/auth.md#login-assistido-b3-login).
+Não chegou o e-mail? Digite `r` no lugar do código para pedir outro.
 
-**2. Testar:**
+**2. Confira**
 
 ```bash
-pnpm b3 probe              # renova a sessão, chama última carga e posição; mostra só status e tipos
-pnpm b3 endpoints          # rotas conhecidas e status de mapeamento
+pnpm b3 probe                # renova a sessão e mostra só status e tipos, nunca valores
 ```
 
-**3. Usar como biblioteca:**
+**3. Suba a API**
+
+```bash
+B3_API_KEY=$(openssl rand -hex 32) pnpm b3 serve
+```
+
+Abra **http://127.0.0.1:8790/docs**, clique em **Authorize**, cole a chave e use o **Try it out**.
+
+```bash
+curl -H "x-api-key: $B3_API_KEY" "http://127.0.0.1:8790/v1/mercado/bridgewise/cotacao?id=PETR3&periodoCotacao=M1"
+curl -H "x-api-key: $B3_API_KEY" "http://127.0.0.1:8790/v1/renda-fixa/calculo-pu?codigo=AAJR11"
+curl -H "x-api-key: $B3_API_KEY" "http://127.0.0.1:8790/v1/movimentacao?todasPaginas=true"
+```
+
+<details>
+<summary><b>Prefere usar como biblioteca TypeScript?</b></summary>
+
+<br>
 
 ```ts
 import { B3Client } from "@b3-investidor/core";
 
-const b3 = new B3Client();                       // lê ~/.config/b3-investidor/session.json
-const posicao = await b3.call("posicao");        // data padrão = última carga da B3
-const extrato = await b3.all("movimentacao", { dataInicio: "2025-01-01" }); // todas as páginas
+const b3 = new B3Client();                                   // lê ~/.config/b3-investidor/session.json
+const posicao = await b3.call("posicao");                    // data padrão = última carga da B3
+const cotacao = await b3.call("bridgewiseCotacao", { id: "PETR3", periodoCotacao: "M1" });
+const extrato = await b3.all("movimentacao", { dataInicio: "2025-01-01" });   // todas as páginas
 ```
 
-**4. Ou subir a API HTTP:**
+Os parâmetros e as respostas são tipados a partir dos schemas [zod](https://zod.dev) do registro.
 
-```bash
-B3_API_KEY=$(openssl rand -hex 32) pnpm b3 serve
-# http://127.0.0.1:8790/docs  (Swagger)
-curl -H "x-api-key: $B3_API_KEY" "http://127.0.0.1:8790/v1/posicao?todasPaginas=true"
+</details>
+
+## O que a API entrega
+
+**37 rotas**, todas `GET`. ✅ = campos confirmados com dados reais · 🟡 = rota funciona, mas campos dos itens ainda não foram vistos (veja [como ajudar](#ajude-a-completar-o-mapa)).
+
+<table>
+<tr><th width="150">Assunto</th><th>Rotas</th></tr>
+
+<tr><td><b>📈 Carteira</b></td><td>
+✅ <code>/v1/posicao</code> posição numa data<br>
+✅ <code>/v1/carteira/resumo</code> · <code>total-acumulado</code> · <code>instituicoes</code> · <code>evolucao</code>
+</td></tr>
+
+<tr><td><b>🧾 Extratos</b></td><td>
+✅ <code>/v1/movimentacao</code> · <code>/v1/movimentacao/ultimas</code><br>
+🟡 <code>/v1/negociacao</code> · <code>/v1/negociacao/ultimas</code>
+</td></tr>
+
+<tr><td><b>💰 Proventos</b></td><td>
+✅ <code>/v1/proventos/meses</code> · <code>recebidos/resumo</code> · <code>tipos-eventos</code><br>
+🟡 <code>/v1/proventos</code> · <code>resumo</code> · <code>anos</code> · <code>tipos-investimentos</code> · <code>recebidos/mensal</code>
+</td></tr>
+
+<tr><td><b>🔎 Mercado</b></td><td>
+✅ <code>/v1/mercado/bridgewise/</code> <code>pesquisa-ativos</code> · <code>cotacao</code> · <code>dados-ativo</code> · <code>desempenho</code> · <code>comparativo</code> · <code>analise-fundamentalista</code> · <code>analise-tecnica</code><br>
+🟡 <code>/v1/mercado/bridgewise/lista-ativos</code> (os ativos da <i>sua</i> carteira)
+</td></tr>
+
+<tr><td><b>🏦 Renda fixa</b></td><td>
+✅ <code>/v1/renda-fixa/</code> <code>titulos-publicos</code> · <code>debentures</code> · <code>cra</code> · <code>cri</code> · <code>calculo-pu</code>
+</td></tr>
+
+<tr><td><b>👤 Investidor</b></td><td>
+✅ <code>/v1/investidor/</code> <code>cadastro</code> · <code>perfil</code> · <code>menus</code> · <code>instituicoes</code> · <code>tipos-movimentacoes</code>
+</td></tr>
+
+<tr><td><b>🔁 Transferência</b></td><td>
+🟡 <code>/v1/transferencia/listados-balcao</code>
+</td></tr>
+
+<tr><td><b>⚙️ Sistema</b></td><td>
+✅ <code>/v1/sistema/ultima-carga</code> datas da última carga de dados da B3
+</td></tr>
+</table>
+
+Cada rota tem parâmetros, respostas e erros documentados. A lista completa, campo a campo, está em **[docs/endpoints.md](docs/endpoints.md)** (gerada do código) e no Swagger:
+
+<div align="center">
+  <img src="docs/assets/swagger-operacao.png" alt="Uma rota aberta no Swagger: parâmetros, exemplo de resposta, headers e erros documentados" width="760">
+</div>
+
+## A sessão, sem você pensar nela
+
+A API se comporta como uma aplicação comum:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant V as Você
+    participant A as b3-investidor-api
+    participant B as B3
+
+    V->>A: GET /v1/posicao
+    alt sessão válida
+        A->>B: chamada com token (renovado sozinho)
+        B-->>A: dados
+        A-->>V: 200
+    else sessão venceu
+        A->>B: login automático (CPF e senha do .env ou do cofre)
+        B-->>V: e-mail com código de verificação
+        A-->>V: 503 precisaCodigo + aviso no webhook
+        V->>A: POST /v1/login/codigo
+        A->>B: conclui o login
+        V->>A: repete a chamada, agora com 200
+    end
 ```
 
-A API cuida da sessão sozinha, como uma aplicação comum:
-
-- **sessão válida** → usa (e renova o access_token a cada hora);
-- **sessão vencida ou ausente** → faz login sozinha com `B3_CPF`/`B3_SENHA` (ou o cofre);
-- **a B3 pede o código do e-mail** (acontece a cada login) → a requisição volta `503` com `precisaCodigo: true`, o webhook avisa, e você manda o código:
-
-```bash
-curl -X POST -H "x-api-key: $B3_API_KEY" -H "content-type: application/json" \
-  -d '{"codigo":"123456"}' http://127.0.0.1:8790/v1/login/codigo
-```
-
-Estado do login em `GET /v1/login`. Para iniciar um login antes de precisar, `POST /v1/login`. Detalhes em [docs/auth.md](docs/auth.md#login-automático-no-servidor).
+- A sessão dura **cerca de 24 h** a partir do login e não dá para estendê-la. Na prática, é um código de e-mail por dia.
+- Sem credenciais configuradas, o login automático fica desligado e a API responde `401` com `precisaLogin`. Rode `b3 login`.
+- Detalhes, incluindo o fluxo de login da B3 passo a passo, em **[docs/auth.md](docs/auth.md)**.
 
 ## Coisas que vale saber
 
-- **A sessão dura 24 h a partir do login.** O `refresh_token` gira a cada renovação, mas a validade não avança.
-  Na prática, é preciso logar de novo uma vez por dia. O servidor avisa por webhook quando a sessão está perto de vencer. Detalhes em [docs/auth.md](docs/auth.md).
-- **Datas são limitadas à última carga da B3** (normalmente D-1 útil). Pedir posição de "hoje" dá erro 400 na B3.
-  O cliente usa a data da carga como padrão e limita datas maiores. O servidor informa o ajuste no header `x-b3-ajustes`.
-- **A B3 manda vários valores já formatados** (`valorFormatado`, `porcentagemFormatada`) como texto pt-BR. Os valores numéricos crus estão nas rotas de posição e extrato.
-- **Campos novos não quebram nada**: os schemas são abertos e repassam o que não conhecem. `pnpm b3 shapes --all` mostra os campos que o schema ainda não descreve.
+| | |
+|---|---|
+| 📅 **Datas** | A B3 só aceita até a **última carga** (normalmente o dia útil anterior). O projeto usa a data da carga como padrão e limita datas maiores; o header `x-b3-ajustes` diz o que mudou. |
+| 🔤 **Valores de mercado** | Chegam como texto já formatado (`"R$ 10,00"`, `"12,3%"`), do jeito que a B3 manda. Posição e extratos trazem os números crus. |
+| 🧩 **Campos novos** | Os schemas são abertos: o que a B3 acrescentar passa adiante sem quebrar. `x-b3-divergencias-schema` conta o que não bateu. |
+| 📬 **Status originais** | `x-b3-status` informa o status da B3 (ex.: `206`, resposta parcial). Erros dela viram `4xx` ou `502` com o corpo explicado. |
+| 🚧 **Fora do ar na B3** | A **renda fixa de mercado** (`ativos`, `negócios`) responde 500 no serviço da B3 e ficou fora até voltar. Veja o [ROADMAP](ROADMAP.md). |
+
+## Como o repositório é organizado
+
+| Pacote | Para quê |
+|---|---|
+| [`@b3-investidor/core`](packages/core) | Cliente tipado: autenticação Azure AD B2C, renovação, registro de rotas com schemas zod, paginação e erros |
+| [`@b3-investidor/server`](packages/server) | API HTTP (Fastify) com Swagger em `/docs`, chave de acesso e renovação automática |
+| [`@b3-investidor/cli`](packages/cli) | O comando `b3`: `login`, `credenciais`, `refresh`, `probe`, `shapes`, `discover`, `endpoints`, `serve` |
+| [`@b3-investidor/login`](packages/login) | Login assistido (Playwright com o seu Chrome/Edge) e cofre de credenciais do sistema |
+
+## Configuração
+
+Tudo no `.env` (copie de [`.env.example`](.env.example)). O essencial:
+
+| Variável | Para quê | Padrão |
+|---|---|---|
+| `B3_API_KEY` | Chave do header `x-api-key` (mínimo 16 caracteres) | **obrigatória** no `serve` |
+| `B3_CPF` · `B3_SENHA` | Login automático. Alternativa mais segura: `b3 credenciais salvar` | cofre do sistema |
+| `B3_SESSION_FILE` | Onde fica o `refresh_token` | `~/.config/b3-investidor/session.json` |
+| `B3_HOST` · `B3_PORT` | Onde o servidor escuta | `127.0.0.1` · `8790` |
+| `B3_AUTO_LOGIN` | `0` desliga o login automático | `1` |
+| `B3_ALERT_WEBHOOK` | Recebe um `POST` quando falta o código, o login falha ou a sessão está perto de vencer | vazio |
 
 ## Ajude a completar o mapa
 
-Várias rotas foram confirmadas com uma conta que não tinha ações, FIIs ou proventos. Por isso os campos desses itens ainda são desconhecidos (🟡).
-Se você tem esses ativos, **dá para contribuir sem expor nada**: `pnpm b3 shapes --all` imprime só a árvore de **tipos**, nunca valores.
-Veja [CONTRIBUTING.md](CONTRIBUTING.md) e o [ROADMAP.md](ROADMAP.md).
+O projeto foi construído com uma conta que só tinha renda fixa. Por isso ações, FIIs, BDRs, ETFs, proventos e negociações têm campos desconhecidos (as rotas 🟡). **Quem tem esses ativos consegue ajudar sem expor nenhum dado:**
 
-## Segurança
+```bash
+pnpm b3 shapes --all                       # imprime só a árvore de TIPOS, nunca valores
+pnpm b3 shapes bridgewiseCotacao -q id=PETR3
+pnpm b3 discover                           # abre o portal e mapeia rotas novas enquanto você navega
+```
 
-- Tokens ficam só na sua máquina (`session.json`, modo 600) ou no armazenamento que você implementar (`TokenStore`).
-- Sem telemetria e sem chamadas a terceiros: o projeto só fala com `b3investidor.b2clogin.com` e `investidor.b3.com.br`.
-- O servidor escuta em `127.0.0.1` por padrão, exige `x-api-key` e oculta credenciais nos logs.
-- Encontrou um problema de segurança? Veja [SECURITY.md](SECURITY.md).
+Cole o resultado numa [issue](https://github.com/Thierrycast/b3-investidor-api/issues/new/choose) e pronto. Também aceitamos código: o caminho está em **[CONTRIBUTING.md](CONTRIBUTING.md)**, e o que falta fazer, em **[ROADMAP.md](ROADMAP.md)**. Já foram mapeadas 135 rotas do portal ([docs/mapa-rotas.md](docs/mapa-rotas.md)); sobram dezenas para implementar.
+
+## Segurança e privacidade
+
+- 🔒 Tokens ficam só na sua máquina (`session.json` com modo 600) ou no armazenamento que você implementar.
+- 📡 Sem telemetria. O código só fala com `b3investidor.b2clogin.com` e `investidor.b3.com.br`.
+- 🛡️ O servidor escuta em `127.0.0.1`, exige `x-api-key` e oculta credenciais nos logs.
+- 🚫 O projeto não resolve CAPTCHA nem o código de verificação: ele sempre vem de você.
+
+Achou uma vulnerabilidade? Veja o [SECURITY.md](SECURITY.md) e **não abra issue pública**.
 
 ## Licença
 
-MIT. Marcas e nomes da B3 pertencem à B3 S.A. — Brasil, Bolsa, Balcão.
+[MIT](LICENSE) © 2026 Thierry Castro. Use, modifique e distribua à vontade, com o aviso de copyright.
+
+*B3, Brasil, Bolsa, Balcão e Área do Investidor são marcas da B3 S.A. Este projeto é independente e não é afiliado, endossado nem mantido pela B3.*

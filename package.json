@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Cliente, API HTTP com Swagger e ferramentas de descoberta para a Área do Investidor da B3 (não oficial).",
+  "packageManager": "pnpm@12.18.0",
   "type": "module",
   "license": "MIT",
   "engines": {

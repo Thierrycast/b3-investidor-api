@@ -1,0 +1,35 @@
+name: Algo não funciona
+description: Erro, resposta estranha ou documentação que não bate com a realidade
+title: "Bug: <resumo>"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A B3 muda a API sem aviso, então boa parte dos problemas é isso. Quanto mais exato o relato, mais rápido a correção.
+        **Nunca cole** tokens, `session.json`, CPF, e-mail ou valores da sua carteira.
+  - type: textarea
+    id: o-que
+    attributes:
+      label: O que aconteceu
+      description: E o que você esperava que acontecesse.
+    validations:
+      required: true
+  - type: textarea
+    id: como
+    attributes:
+      label: Como reproduzir
+      description: O comando ou a chamada (sem chaves nem valores pessoais) e a mensagem de erro.
+      render: shell
+  - type: input
+    id: ambiente
+    attributes:
+      label: Ambiente
+      placeholder: Windows 11, Node 22.16, pnpm 10
+  - type: checkboxes
+    id: confirmacao
+    attributes:
+      label: Antes de enviar
+      options:
+        - label: Revisei o texto acima e não há dados pessoais, tokens nem valores.
+          required: true

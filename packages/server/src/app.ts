@@ -21,10 +21,24 @@ export interface ServerOptions {
   version?: string;
 }
 
+/**
+ * Objetos abertos (loose) saem do zod com `additionalProperties: {}`, e o Swagger UI inventa campos
+ * `additionalProp1..3` nos exemplos. Na documentação, "aceita campos extras" é o comportamento padrão.
+ */
+const semPropriedadesExtras = (n: unknown): unknown => {
+  if (Array.isArray(n)) return n.map(semPropriedadesExtras);
+  if (n && typeof n === "object") {
+    const o = n as Record<string, unknown>;
+    const livre = (v: unknown) => v === true || (typeof v === "object" && v !== null && !Array.isArray(v) && Object.keys(v).length === 0);
+    return Object.fromEntries(Object.entries(o).filter(([k, v]) => !(k === "additionalProperties" && livre(v))).map(([k, v]) => [k, semPropriedadesExtras(v)]));
+  }
+  return n;
+};
+
 const jsonSchema = (s: z.ZodType, io: "input" | "output") => {
   try {
     const { $schema: _ignored, ...rest } = z.toJSONSchema(s, { io, target: "openapi-3.0", unrepresentable: "any" }) as Record<string, unknown>;
-    return rest;
+    return semPropriedadesExtras(rest) as Record<string, unknown>;
   } catch {
     return {};
   }

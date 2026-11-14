@@ -1,0 +1,38 @@
+name: Campos de uma rota (🟡)
+description: Você tem o ativo e pode descrever os campos de uma rota sem expor dados
+title: "Campos: <rota>"
+labels: ["campos", "ajuda-bem-vinda"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por ajudar! **Nunca cole valores**: nada de CPF, nome, e-mail, tokens, valores em R$, quantidades ou tickers da sua carteira.
+        Árvores de **tipos** (`"valorAtualizado": "number"`) são seguras. Veja o passo a passo no [CONTRIBUTING](https://github.com/Thierrycast/b3-investidor-api/blob/main/CONTRIBUTING.md#1-mapear-campos-de-uma-rota-).
+  - type: input
+    id: rota
+    attributes:
+      label: Rota
+      description: O id ou o caminho da rota, como aparece em `pnpm b3 endpoints`.
+      placeholder: negociacao
+    validations:
+      required: true
+  - type: textarea
+    id: shape
+    attributes:
+      label: "`shape` e `camposForaDoSchema`"
+      description: Saída de `pnpm b3 shapes <rota>` para essa rota. Revise antes de colar.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: significado
+    attributes:
+      label: O que cada campo significa (opcional)
+      description: Compare com o que o portal mostra, mas **descreva** em vez de copiar valores.
+  - type: checkboxes
+    id: confirmacao
+    attributes:
+      label: Antes de enviar
+      options:
+        - label: Revisei o texto acima e não há dados pessoais, tokens nem valores.
+          required: true

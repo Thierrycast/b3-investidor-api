@@ -1,0 +1,33 @@
+name: Rota nova do portal
+description: Achou uma rota da Área do Investidor que ainda não está no projeto
+title: "Rota: <nome>"
+labels: ["rota-nova"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        O jeito mais fácil é `pnpm b3 discover`: ele registra rotas, **nomes** de parâmetros e árvores de tipos enquanto você navega, sem gravar valores. Confira antes em [docs/mapa-rotas.md](https://github.com/Thierrycast/b3-investidor-api/blob/main/docs/mapa-rotas.md) se ela já foi mapeada.
+  - type: input
+    id: rota
+    attributes:
+      label: Método e caminho
+      placeholder: GET /negocio-xxx/api/.../v1/...
+    validations:
+      required: true
+  - type: textarea
+    id: parametros
+    attributes:
+      label: Nomes e formato dos parâmetros
+      description: Só os **nomes** e o formato (`dataInicio=AAAA-MM-DD`), nunca os valores.
+  - type: textarea
+    id: shape
+    attributes:
+      label: Árvore de tipos da resposta (e o status HTTP)
+      render: json
+  - type: checkboxes
+    id: confirmacao
+    attributes:
+      label: Antes de enviar
+      options:
+        - label: Revisei o texto acima e não há dados pessoais, tokens nem valores.
+          required: true
