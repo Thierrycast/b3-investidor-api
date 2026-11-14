@@ -219,6 +219,30 @@ describe("rotas", () => {
     expect(vistos[0]!.searchParams.get("dataFim")).toBe("2026-11-10");
   });
 
+  it("cálculo de PU: `codigo` obrigatório e dataCalculo padrão = última carga", async () => {
+    const vistos: URL[] = [];
+    const c = novoCliente({
+      "/ultima-execucao": carga,
+      "/realizar-calculo-pu": (url) => {
+        vistos.push(url);
+        return json({
+          data: {
+            pu: 1000.5, puPar: 1000, percentualPU: 100, financeiro: 1000.5, vna: 1000, codigoTitulo: "AAAA11",
+            data: "2026-11-11T00:00:00",
+            listaFluxoCaixa: [{ data: "2027-01-01T00:00:00", tipoEvento: { valor: "Juros" }, valorFinal: 10, valorPresente: 9, diasUteis: 30, rendimento: 1 }],
+            duracao: 2.5, possuiNota: false, interesse: 0, emissor: "Emissor", rendimentoEmissor: 1, metodo: "m", status: "ok",
+            tipoIF: { id: 1, codigo: "DEB", stringCodigo: "DEB" }, rendimento: 1,
+          },
+        });
+      },
+    });
+    await expect(c.call("calcRFCalculoPU", {} as never)).rejects.toThrow();
+    const r = await c.callWithMeta("calcRFCalculoPU", { codigo: "AAAA11" });
+    expect(r.meta.schemaIssues).toEqual([]);
+    expect(vistos[0]!.searchParams.get("codigo")).toBe("AAAA11");
+    expect(vistos[0]!.searchParams.get("dataCalculo")).toBe("2026-11-11");
+  });
+
   it("balcão e tabelas de apoio aceitam o formato real", async () => {
     const c = novoCliente({
       "/listados-balcao": () => json([]),

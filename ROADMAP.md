@@ -5,7 +5,7 @@ Estado em 2026-11-13. Ajude onde puder: veja [CONTRIBUTING.md](CONTRIBUTING.md).
 ## Pronto
 
 - [x] Autenticação: renovação fora do navegador, rotação do token, erros claros (`needsLogin`)
-- [x] 36 rotas no registro (20 do portal + 16 de mercado e referência, testadas ao vivo em 13/11/2026), com schemas, paginação e limite pela data de carga
+- [x] 37 rotas no registro (20 do portal + 17 de mercado e referência, testadas ao vivo em 13/11/2026), com schemas, paginação e limite pela data de carga
 - [x] API HTTP com Swagger, `x-api-key` e renovação automática com aviso por webhook
 - [x] `b3 probe`, `b3 shapes`, `b3 endpoints`, `b3 serve`
 - [x] Documentação gerada do registro (`docs/endpoints.md`)
@@ -18,11 +18,10 @@ Estado em 2026-11-13. Ajude onde puder: veja [CONTRIBUTING.md](CONTRIBUTING.md).
 - [x] Login automático no servidor: sessão vencida → login sozinho; código do e-mail via `POST /v1/login/codigo` (testes sintéticos; falta teste ao vivo)
 - [ ] `b3 login --push` contra um servidor remoto (implementado, não testado de ponta a ponta)
 - [x] **`b3 discover`**: abre o portal no Chrome da pessoa (perfil próprio, CDP) e registra rotas, nomes de parâmetros e árvores de tipos enquanto ela navega (testes do modelo de rota; falta rodada ao vivo).
-- [x] **Mapa dos micro-frontends** (13/11/2026): 135 rotas em [docs/mapa-rotas.md](docs/mapa-rotas.md), vindas do código dos 21 micro-frontends e da navegação ao vivo (90 de leitura fora do registro).
+- [x] **Mapa dos micro-frontends** (13/11/2026): 135 rotas em [docs/mapa-rotas.md](docs/mapa-rotas.md), vindas do código dos 21 micro-frontends e da navegação ao vivo (89 de leitura fora do registro).
 - [ ] **Implementar as rotas de leitura do mapa** no registro. Prioridades:
-  - [x] 16 rotas implementadas e conferidas ao vivo em 13/11/2026: 8 do Bridgewise, 4 títulos da calculadora de renda fixa, balcão e 3 tabelas de apoio;
-  - [ ] **renda fixa** (`ativos`, `negocio-consolidado`, `negocio-a-negocio`): respondem 500 com ou sem parâmetros. Falta ver a chamada real do portal: `b3 discover` na tela `/renda-fixa/ativos`;
-  - [ ] **calculadora de PU** (`realizar-calculo-pu`): 400 pedindo `codigo`, e depois "data de cálculo inválida". Falta descobrir os parâmetros;
+  - [x] 17 rotas implementadas e conferidas ao vivo (e pelo servidor HTTP) em 13/11/2026: 8 do Bridgewise, 4 listas de títulos e o cálculo de PU, balcão e 3 tabelas de apoio;
+  - [ ] **renda fixa** (`ativos`, `negocio-consolidado`, `negocio-a-negocio`): a B3 valida os parâmetros (`Pagina` fora de 1..n dá 400) e depois responde 500, com qualquer combinação. Fora do registro. Tentar de novo mais tarde e, se persistir, `b3 discover` na tela `/renda-fixa/ativos`;
   - [ ] `bridgewise/lista-ativos` responde 204 sem corpo; `periodoCotacao`: valores aceitos não mapeados;
   - [ ] extratos de ofertas públicas, garantias e eventos a receber;
   - [ ] calendário de eventos;

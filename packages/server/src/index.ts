@@ -22,7 +22,7 @@ export interface StartOptions {
 /** Sobe o servidor com renovação e login automáticos. Lê o .env quando a opção não vem. */
 export async function startServer(o: StartOptions = {}) {
   const env = process.env;
-  const client = new B3Client({ store: new FileTokenStore(o.sessionFile ?? env.B3_SESSION_FILE) });
+  const client = new B3Client({ store: new FileTokenStore(o.sessionFile || env.B3_SESSION_FILE || undefined) });
   const log = (msg: string, extra?: Record<string, unknown>) => app.log.info(extra ?? {}, msg);
 
   const autoLogin = o.autoLogin ?? env.B3_AUTO_LOGIN !== "0";

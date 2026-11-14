@@ -231,6 +231,38 @@ export const CalcRFTitulosPrivados = z.looseObject({
   data: z.array(z.looseObject({ codigoTitulo: str(), habilitarProjecao: bool(), dataVencimento: dataIso() })),
 });
 
+/** Preço unitário (PU) de um título, com o fluxo de caixa. Observado ao vivo em 13/11/2026. */
+export const CalcRFCalculoPU = z.looseObject({
+  data: z.looseObject({
+    pu: num(),
+    puPar: num(),
+    percentualPU: num(),
+    financeiro: num(),
+    vna: num(),
+    codigoTitulo: str(),
+    data: dataIso("Data do cálculo"),
+    listaFluxoCaixa: z.array(
+      z.looseObject({
+        data: dataIso(),
+        tipoEvento: z.looseObject({ valor: str() }).nullish(),
+        valorFinal: num(),
+        valorPresente: num(),
+        diasUteis: num(),
+        rendimento: num(),
+      }),
+    ),
+    duracao: num(),
+    possuiNota: bool(),
+    interesse: num(),
+    emissor: str(),
+    rendimentoEmissor: num(),
+    metodo: str(),
+    status: str(),
+    tipoIF: z.looseObject({ id: num(), codigo: str(), stringCodigo: str() }).nullish(),
+    rendimento: num(),
+  }),
+});
+
 // ---------- tabelas de apoio ----------
 
 export const Instituicoes = z.looseObject({ instituicoes: z.array(z.looseObject({ id: str().describe("Dígitos (CNPJ da instituição)"), descricao: str() })) });

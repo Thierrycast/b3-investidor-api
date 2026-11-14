@@ -265,6 +265,6 @@ Telas que carregaram na navegação: `/extrato/{movimentacao,negociacao,eventos-
 | 🟢 [200] | GET | `/negocio-voto/api/voto/v3/assembleia/investidor` | `dataFim` `dataInicio` `filtrarVotadas` `paginaAtual` `situacaoAssembleia` `tamanhoPagina` `tipoAssembleia` |
 
 ---
-135 rotas no mapa; 90 de leitura ainda fora do registro.
+135 rotas no mapa; 89 de leitura ainda fora do registro.
 
 *Gerado por: Claude Code (claude-opus-5-5) — 2026-11-13.*

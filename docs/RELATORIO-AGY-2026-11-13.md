@@ -19,29 +19,30 @@ testadas ao vivo e corrigidas. Este arquivo registra o que foi visto. Só tipos 
 | `calcRFTitulosDebentures` | 200 | ✅ |
 | `calcRFTitulosCRA` | 200 | ✅ |
 | `calcRFTitulosCRI` | 200 | ✅ |
+| `calcRFCalculoPU` | 200 | ✅ pede `codigo` + `dataCalculo`; vale para debêntures, CRA, CRI e título público (`idSelic`) |
 | `transferenciaListadosBalcao` | 200 | 🟡 lista vazia para esta conta |
 | `instituicoes` | 200 | ✅ |
 | `tiposEventos` | 200 | ✅ |
 | `tiposMovimentacoes` | 200 | ✅ |
 
-16 rotas no registro: 12 ✅ e 4 🟡. Em todas, `b3 shapes` não encontrou divergência nem campo fora do schema.
+17 rotas no registro: 13 ✅ e 4 🟡. Todas também foram chamadas pelo servidor HTTP (`b3 serve`) e responderam como esperado; falta de parâmetro obrigatório dá 400. Em todas, `b3 shapes` não encontrou divergência nem campo fora do schema.
 
 ## Fora do registro
 
 | Rota | HTTP | O que se sabe |
 |---|:---:|---|
-| `rendaFixaAtivos`, `rendaFixaNegocioConsolidado`, `rendaFixaNegocioANegocio` | 500 | Mesmo erro genérico da B3 com e sem parâmetros (`Pagina`, `TamanhoPagina`, `DataNegocio`, `CodigoInstrumento`). Falta a chamada real do portal: `b3 discover` na tela `/renda-fixa/ativos`. |
-| `calcRFCalculoPU` | 400 | Pede `codigo`; com um código de título válido, responde "Data de cálculo inválida". É um cálculo, não uma consulta. Faltam os parâmetros. |
+| `rendaFixaAtivos`, `rendaFixaNegocioConsolidado`, `rendaFixaNegocioANegocio` | 500 | A B3 valida os parâmetros (`Pagina=0` dá 400) e depois responde 500 genérico, com qualquer combinação testada (`Pagina`, `TamanhoPagina`, `DataNegocio`, `CodigoInstrumento`, maiúsculas e minúsculas). Parece problema do serviço. Ficaram fora do registro. |
 
 ## O que o agy errou e foi corrigido
 
 - Nove respostas foram registradas como lista (`array`), mas a B3 devolve objeto: `{ data: [...] }`, `{ instituicoes: [...] }` etc.
 - `b3 shapes` não conseguia chamar rotas com `{id}`. Ganhou `-q chave=valor` (repetível).
 - Os testes só repetiam o que a fixture inventada devolvia. Foram refeitos com o formato real e conferem o schema.
-- As quatro rotas que falham estavam marcadas ✅ no mapa; voltaram a 📄 com o status visto (🔴).
+- As quatro rotas que falhavam estavam marcadas ✅ no mapa. O cálculo de PU foi resolvido (faltava `dataCalculo`, que nenhuma descrição mencionava); as três de renda fixa saíram do registro e ficam como 🔴 no mapa.
 
 ## Achados fora do escopo
 
+- O servidor ignorava a sessão quando `B3_SESSION_FILE=` vinha vazio no `.env` (o que o `.env.example` entrega): tratava o texto vazio como caminho, achava que não havia sessão e disparava o login automático. Corrigido com `||`.
 - `parseApiError` quebrava (`v.join is not a function`) quando a B3 mandava `errors` com valor que não era lista. Corrigido.
 - `tiposEventos[].id` chega como lista de números, não como número (a B3 é assim; está no schema com `Sic`).
 

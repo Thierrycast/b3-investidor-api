@@ -39,6 +39,7 @@ A coluna **API** é a rota equivalente no servidor deste projeto (`b3 serve`), q
 | ✅ | [`calcRFTitulosDebentures`](#calcrftitulosdebentures) | `/v1/renda-fixa/debentures` | Debêntures da calculadora de renda fixa |
 | ✅ | [`calcRFTitulosCRA`](#calcrftituloscra) | `/v1/renda-fixa/cra` | CRA da calculadora de renda fixa |
 | ✅ | [`calcRFTitulosCRI`](#calcrftituloscri) | `/v1/renda-fixa/cri` | CRI da calculadora de renda fixa |
+| ✅ | [`calcRFCalculoPU`](#calcrfcalculopu) | `/v1/renda-fixa/calculo-pu` | Preço unitário (PU) e fluxo de caixa de um título |
 | 🟡 | [`transferenciaListadosBalcao`](#transferencialistadosbalcao) | `/v1/transferencia/listados-balcao` | Solicitações de transferência de ativos listados em balcão |
 | ✅ | [`instituicoes`](#instituicoes) | `/v1/investidor/instituicoes` | Instituições financeiras (id e nome) |
 | ✅ | [`tiposEventos`](#tiposeventos) | `/v1/proventos/tipos-eventos` | Tipos de evento provisionado (dividendo, JCP etc.) |
@@ -892,6 +893,55 @@ Resposta:
   - `codigoTitulo`: string
   - `habilitarProjecao`: boolean
   - `dataVencimento`: string — Data ISO sem fuso (AAAA-MM-DDT00:00:00)
+
+### calcRFCalculoPU
+
+**Preço unitário (PU) e fluxo de caixa de um título** — ✅ confirmado
+
+Calcula o PU do título na data pedida. O código vem das listas de títulos (`titulos-publicos` usa o `idSelic`).
+
+- B3: `GET /negocio-calcrf/api/calcrf/v1/calculadora-pu/realizar-calculo-pu`
+- API: `GET /v1/renda-fixa/calculo-pu`
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `codigo` | string | sim | Código do título: `codigoTitulo` de debêntures, CRA e CRI, ou `idSelic` de título público |
+| `dataCalculo` | string | não | Data do cálculo (AAAA-MM-DD). Padrão: data da última carga; formato `^\d{4}-\d{2}-\d{2}$` |
+
+Observações:
+
+- A B3 aceitou datas futuras e fins de semana. Sem `dataCalculo` ela responde 400 "Data de cálculo inválida"; por isso o padrão.
+
+Resposta:
+
+- `data`: objeto
+  - `pu`: number
+  - `puPar`: number
+  - `percentualPU`: number
+  - `financeiro`: number
+  - `vna`: number
+  - `codigoTitulo`: string
+  - `data`: string — Data do cálculo
+  - `listaFluxoCaixa`: objeto[]
+    - `data`: string — Data ISO sem fuso (AAAA-MM-DDT00:00:00)
+    - `tipoEvento`: objeto
+      - `valor`: string
+    - `valorFinal`: number
+    - `valorPresente`: number
+    - `diasUteis`: number
+    - `rendimento`: number
+  - `duracao`: number
+  - `possuiNota`: boolean
+  - `interesse`: number
+  - `emissor`: string
+  - `rendimentoEmissor`: number
+  - `metodo`: string
+  - `status`: string
+  - `tipoIF`: objeto
+    - `id`: number
+    - `codigo`: string
+    - `stringCodigo`: string
+  - `rendimento`: number
 
 ## Transferência
 

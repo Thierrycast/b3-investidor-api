@@ -458,6 +458,23 @@ export const endpoints = {
     status: "confirmado",
   }),
 
+  calcRFCalculoPU: def({
+    id: "calcRFCalculoPU",
+    tag: "Renda Fixa",
+    summary: "Preço unitário (PU) e fluxo de caixa de um título",
+    description: "Calcula o PU do título na data pedida. O código vem das listas de títulos (`titulos-publicos` usa o `idSelic`).",
+    b3Path: `${CALCRF}/calculadora-pu/realizar-calculo-pu`,
+    route: "/v1/renda-fixa/calculo-pu",
+    query: z.object({
+      codigo: z.string().min(1).describe("Código do título: `codigoTitulo` de debêntures, CRA e CRI, ou `idSelic` de título público"),
+      dataCalculo: S.DataParam.optional().describe("Data do cálculo (AAAA-MM-DD). Padrão: data da última carga"),
+    }),
+    response: S.CalcRFCalculoPU,
+    status: "confirmado",
+    defaults: ({ carga }) => ({ dataCalculo: carga }),
+    notes: ["A B3 aceitou datas futuras e fins de semana. Sem `dataCalculo` ela responde 400 \"Data de cálculo inválida\"; por isso o padrão."],
+  }),
+
   // ---------- balcão ----------
 
   transferenciaListadosBalcao: def({
