@@ -141,120 +141,94 @@ describe("rotas", () => {
     expect(await c.call("proventosAnos")).toBeNull();
   });
 
-  it("rotas bridgewise substituem id no caminho e enviam busca e período", async () => {
-    const chamadasFeitas: string[] = [];
-    const { f } = fakeFetch({
-      "/oauth2/v2.0/token": tokenOk,
-      "/pesquisa-ativos": (url) => {
-        chamadasFeitas.push(url.pathname + url.search);
-        return json([{ ticker: "VALE3" }]);
-      },
-      "/PETR4/cotacao": (url) => {
-        chamadasFeitas.push(url.pathname);
-        return json({ preco: 38.5 });
-      },
-      "/PETR4/analise-fundamentalista": (url) => {
-        chamadasFeitas.push(url.pathname + url.search);
-        return json({ pl: 4.2 });
-      },
+  // As respostas abaixo têm o formato (tipos) visto ao vivo em 13/11/2026, com valores inventados.
+  // O que se confere: caminho e parâmetros enviados, e que o schema aceita o formato real.
+  const novoCliente = (rotas: Record<string, Handler>) =>
+    new B3Client({ store: new MemoryTokenStore({ refresh_token: "x" }), fetch: fakeFetch({ "/oauth2/v2.0/token": tokenOk, ...rotas }).f });
+
+  it("bridgewise: pesquisa envia `busca`; {id} vai no caminho e não na query", async () => {
+    const vistos: URL[] = [];
+    const reg = (corpo: unknown): Handler => (url) => {
+      vistos.push(url);
+      return json(corpo);
+    };
+    const c = novoCliente({
+      "/pesquisa-ativos": reg({
+        data: [{ totalAtivos: 1, ativos: [{ ticker: "AAAA3", nome: "Empresa A", precoAlvo: "R$ 10,00", recomendacao: { valor: "4", descricao: "Compra" } }] }],
+        links: { self: "s", first: "f", last: "l" },
+        meta: { totalRecords: 1, totalPages: 1 },
+      }),
+      "/AAAA3/cotacao": reg({
+        data: {
+          recomendacao: { valor: "4", descricao: "Compra" },
+          precoFechamento: { valor: "R$ 10,00", variacao: "1,0%", positivo: true },
+          periodos: [{ nome: "1M", variacao: "2,0%", positivo: false }],
+          dadosGrafico: [{ data: "2026-11-12T00:00:00", preco: 10, precoFormatado: "R$ 10,00" }],
+          descricao: "d",
+          marketCap: "1 bi",
+          volumeMedio: "1 mi",
+          beta: "1,1",
+          dividendYield: "5%",
+          crescimentoReceita: "3%",
+          indicePL: "6",
+        },
+      }),
+      "/AAAA3/analise-tecnica": reg({
+        data: [{ analiseTecnica: "t", precoFechamento: { valor: "R$ 10,00", variacao: "1%", positivo: true }, suporte: "9", resistencia: "11", descricao: "d", tendenciaPreco: [], momentosMercado: [] }],
+        links: { self: "s", first: "f", last: "l" },
+        meta: { totalRecords: 1, totalPages: 1 },
+      }),
     });
-    const cliente = new B3Client({ store: new MemoryTokenStore({ refresh_token: "x" }), fetch: f });
-    const lista = await cliente.call("bridgewisePesquisaAtivos", { busca: "PETR" });
-    expect(lista).toEqual([{ ticker: "VALE3" }]);
-    expect(chamadasFeitas[0]).toContain("busca=PETR");
 
-    const cotacao = await cliente.call("bridgewiseCotacao", { id: "PETR4" });
-    expect(cotacao).toEqual({ preco: 38.5 });
-    expect(chamadasFeitas[1]).toContain("/PETR4/cotacao");
+    const pesquisa = await c.callWithMeta("bridgewisePesquisaAtivos", { busca: "AAAA" });
+    expect(pesquisa.meta.schemaIssues).toEqual([]);
+    expect(vistos[0]!.searchParams.get("busca")).toBe("AAAA");
 
-    const fundamentalista = await cliente.call("bridgewiseAnaliseFundamentalista", { id: "PETR4", periodoCotacao: "12M" });
-    expect(fundamentalista).toEqual({ pl: 4.2 });
-    expect(chamadasFeitas[2]).toContain("/PETR4/analise-fundamentalista");
-    expect(chamadasFeitas[2]).toContain("periodoCotacao=12M");
+    const cotacao = await c.callWithMeta("bridgewiseCotacao", { id: "AAAA3" });
+    expect(cotacao.meta.schemaIssues).toEqual([]);
+    expect(vistos[1]!.pathname).toMatch(/\/bridgewise\/AAAA3\/cotacao$/);
+    expect(vistos[1]!.searchParams.has("id")).toBe(false);
+
+    const tecnica = await c.callWithMeta("bridgewiseAnaliseTecnica", { id: "AAAA3", periodoCotacao: "1Y" });
+    expect(tecnica.meta.schemaIssues).toEqual([]);
+    expect(vistos[2]!.searchParams.get("periodoCotacao")).toBe("1Y");
   });
 
-  it("rotas de renda fixa e calculadora repassam parâmetros corretos", async () => {
-    const chamadasFeitas: string[] = [];
-    const { f } = fakeFetch({
-      "/oauth2/v2.0/token": tokenOk,
-      "/rendafixa/v1/ativos": (url) => {
-        chamadasFeitas.push(url.pathname + url.search);
-        return json({ totalRegistros: 10 });
-      },
-      "/rendafixa/v1/negocio-consolidado": (url) => {
-        chamadasFeitas.push(url.pathname + url.search);
-        return json({ consolidado: true });
-      },
-      "/titulos/lista-titulos-cra": (url) => {
-        chamadasFeitas.push(url.pathname + url.search);
-        return json([{ codigoCRA: "CRA123" }]);
-      },
-    });
-    const cliente = new B3Client({ store: new MemoryTokenStore({ refresh_token: "x" }), fetch: f });
-
-    const ativos = await cliente.call("rendaFixaAtivos", { CodigoInstrumento: "CDB", Pagina: 2, TamanhoPagina: 50 });
-    expect(ativos).toEqual({ totalRegistros: 10 });
-    expect(chamadasFeitas[0]).toContain("CodigoInstrumento=CDB");
-    expect(chamadasFeitas[0]).toContain("Pagina=2");
-    expect(chamadasFeitas[0]).toContain("TamanhoPagina=50");
-
-    const consolidado = await cliente.call("rendaFixaNegocioConsolidado", { DataNegocio: "2026-11-10", Pagina: 1 });
-    expect(consolidado).toEqual({ consolidado: true });
-    expect(chamadasFeitas[1]).toContain("DataNegocio=2026-11-10");
-
-    const titulosCRA = await cliente.call("calcRFTitulosCRA", { dataInicio: "2026-01-01", dataFim: "2026-11-10" });
-    expect(titulosCRA).toEqual([{ codigoCRA: "CRA123" }]);
-    expect(chamadasFeitas[2]).toContain("dataInicio=2026-01-01");
-    expect(chamadasFeitas[2]).toContain("dataFim=2026-11-10");
+  it("bridgewise: `id` é obrigatório e a lista de ativos aceita 204", async () => {
+    const c = novoCliente({ "/lista-ativos": () => new Response(null, { status: 204 }) });
+    await expect(c.call("bridgewiseCotacao", {} as never)).rejects.toThrow();
+    const r = await c.callWithMeta("bridgewiseListaAtivos");
+    expect(r.data).toBeNull();
+    expect(r.meta.status).toBe(204);
+    expect(r.meta.schemaIssues).toEqual([]);
   });
 
-  it("rota de balcão repassa pagina e qtdRegistros", async () => {
-    const chamadasFeitas: string[] = [];
-    const { f } = fakeFetch({
-      "/oauth2/v2.0/token": tokenOk,
-      "/solicitacoes/listados-balcao": (url) => {
-        chamadasFeitas.push(url.pathname + url.search);
-        return json({ registros: [] });
+  it("títulos da calculadora de renda fixa: envelope { data } e datas na query", async () => {
+    const vistos: URL[] = [];
+    const c = novoCliente({
+      "/lista-titulos-publicos": () => json({ data: [{ idSelic: 1, emissor: "Tesouro", metodo: "m", dataExpiracao: "2030-01-01", habilitarProjecao: true }] }),
+      "/lista-titulos-cra": (url) => {
+        vistos.push(url);
+        return json({ data: [{ codigoTitulo: "CRA000", habilitarProjecao: false, dataVencimento: "2030-01-01T00:00:00" }] });
       },
     });
-    const cliente = new B3Client({ store: new MemoryTokenStore({ refresh_token: "x" }), fetch: f });
-    const resposta = await cliente.call("transferenciaListadosBalcao", { pagina: 3, qtdRegistros: 20 });
-    expect(resposta).toEqual({ registros: [] });
-    expect(chamadasFeitas[0]).toContain("/solicitacoes/listados-balcao");
-    expect(chamadasFeitas[0]).toContain("pagina=3");
-    expect(chamadasFeitas[0]).toContain("qtdRegistros=20");
+    expect((await c.callWithMeta("calcRFTitulosPublicos")).meta.schemaIssues).toEqual([]);
+    const cra = await c.callWithMeta("calcRFTitulosCRA", { dataInicio: "2026-01-01", dataFim: "2026-11-10" });
+    expect(cra.meta.schemaIssues).toEqual([]);
+    expect(vistos[0]!.searchParams.get("dataInicio")).toBe("2026-01-01");
+    expect(vistos[0]!.searchParams.get("dataFim")).toBe("2026-11-10");
   });
 
-  it("rotas de tabelas de apoio chamam os caminhos esperados", async () => {
-    const chamadasFeitas: string[] = [];
-    const { f } = fakeFetch({
-      "/oauth2/v2.0/token": tokenOk,
-      "/investidor/v1/instituicoes": (url) => {
-        chamadasFeitas.push(url.pathname);
-        return json([{ id: "banco-1" }]);
-      },
-      "/v1.1/tipos-eventos": (url) => {
-        chamadasFeitas.push(url.pathname);
-        return json([{ tipo: "dividendo" }]);
-      },
-      "/investidor/v1/tipos-movimentacoes": (url) => {
-        chamadasFeitas.push(url.pathname);
-        return json([{ tipo: "transferencia" }]);
-      },
+  it("balcão e tabelas de apoio aceitam o formato real", async () => {
+    const c = novoCliente({
+      "/listados-balcao": () => json([]),
+      "/investidor/v1/instituicoes": () => json({ instituicoes: [{ id: "00000000000191", descricao: "Corretora X" }] }),
+      "/v1.1/tipos-eventos": () => json({ tiposEventos: [{ id: [1], nomeTipoEvento: "Dividendo" }], detalheStatusCode: 0 }),
+      "/investidor/v1/tipos-movimentacoes": () => json({ tiposMovimentacoes: [{ id: 1, descricao: "Compra" }], excecoes: null }),
     });
-    const cliente = new B3Client({ store: new MemoryTokenStore({ refresh_token: "x" }), fetch: f });
-
-    const listaInstituicoes = await cliente.call("instituicoes");
-    expect(listaInstituicoes).toEqual([{ id: "banco-1" }]);
-    expect(chamadasFeitas[0]).toContain("/investidor/v1/instituicoes");
-
-    const listaEventos = await cliente.call("tiposEventos");
-    expect(listaEventos).toEqual([{ tipo: "dividendo" }]);
-    expect(chamadasFeitas[1]).toContain("/v1.1/tipos-eventos");
-
-    const listaMovimentacoes = await cliente.call("tiposMovimentacoes");
-    expect(listaMovimentacoes).toEqual([{ tipo: "transferencia" }]);
-    expect(chamadasFeitas[2]).toContain("/investidor/v1/tipos-movimentacoes");
+    for (const id of ["transferenciaListadosBalcao", "instituicoes", "tiposEventos", "tiposMovimentacoes"] as const) {
+      expect((await c.callWithMeta(id)).meta.schemaIssues, id).toEqual([]);
+    }
   });
 });
 

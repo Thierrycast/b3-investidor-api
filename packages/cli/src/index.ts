@@ -30,6 +30,7 @@ Uso: b3 <comando> [opções]
   probe                   Teste rápido: renova, chama última carga e posição; só status e tipos.
   shapes [ids...] [--all] Árvore de TIPOS das respostas (nunca valores) e campos fora do schema.
                           Seguro para colar em issues. Sem ids: rotas confirmadas.
+      -q chave=valor      parâmetro da consulta (repetível), ex.: -q id=PETR4 -q periodoCotacao=1Y
   discover                Abre o portal no seu Chrome (perfil próprio) e mapeia as rotas da API enquanto
                           você navega: rota, nomes de parâmetros, status e tipos (nunca valores).
       --out <arquivo>     padrão: captures/discover-<data>.json    --chrome <caminho>   --port <n> (9333)
@@ -56,6 +57,7 @@ const { values, positionals } = parseArgs({
     out: { type: "string" },
     chrome: { type: "string" },
     port: { type: "string" },
+    query: { type: "string", short: "q", multiple: true },
   },
 });
 
@@ -163,6 +165,15 @@ async function main() {
       const c = client();
       const ids = (args.length ? args : endpointList.filter((e) => values.all || e.status === "confirmado").map((e) => e.id)) as EndpointId[];
       const result: Record<string, unknown> = {};
+      // --query chave=valor (repetível): parâmetros para rotas que exigem, como o {id} do Bridgewise.
+      // Vale para todas as rotas da chamada; cada rota ignora o que não declara.
+      const query = Object.fromEntries(
+        (values.query ?? []).map((kv) => {
+          const i = kv.indexOf("=");
+          if (i < 1) throw new Error(`--query espera chave=valor, recebi "${kv}"`);
+          return [kv.slice(0, i), kv.slice(i + 1)];
+        }),
+      );
       for (const id of ids) {
         const ep = endpoints[id];
         if (!ep) {
@@ -170,7 +181,7 @@ async function main() {
           continue;
         }
         try {
-          const { data, meta } = await c.callWithMeta(id);
+          const { data, meta } = await c.callWithMeta(id, query as never);
           result[id] = {
             status: meta.status,
             parametros: Object.keys(meta.params),

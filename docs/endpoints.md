@@ -27,26 +27,22 @@ A coluna **API** é a rota equivalente no servidor deste projeto (`b3 serve`), q
 | ✅ | [`cadastro`](#cadastro) | `/v1/investidor/cadastro` | Dados cadastrais do investidor |
 | ✅ | [`perfil`](#perfil) | `/v1/investidor/perfil` | Perfil do investidor |
 | ✅ | [`menusDisponiveis`](#menusdisponiveis) | `/v1/investidor/menus` | Funcionalidades habilitadas para a conta |
-| 🟡 | [`bridgewiseListaAtivos`](#bridgewiselistaativos) | `/v1/mercado/bridgewise/lista-ativos` | Lista de ativos disponíveis no Bridgewise |
-| 🟡 | [`bridgewisePesquisaAtivos`](#bridgewisepesquisaativos) | `/v1/mercado/bridgewise/pesquisa-ativos` | Pesquisa de ativos no Bridgewise |
-| 🟡 | [`bridgewiseCotacao`](#bridgewisecotacao) | `/v1/mercado/bridgewise/cotacao` | Cotação de ativo no Bridgewise |
-| 🟡 | [`bridgewiseDadosAtivo`](#bridgewisedadosativo) | `/v1/mercado/bridgewise/dados-ativo` | Dados cadastrais e gerais do ativo no Bridgewise |
-| 🟡 | [`bridgewiseDesempenho`](#bridgewisedesempenho) | `/v1/mercado/bridgewise/desempenho` | Desempenho histórico do ativo no Bridgewise |
-| 🟡 | [`bridgewiseComparativo`](#bridgewisecomparativo) | `/v1/mercado/bridgewise/comparativo` | Comparativo de ativos no Bridgewise |
-| 🟡 | [`bridgewiseAnaliseFundamentalista`](#bridgewiseanalisefundamentalista) | `/v1/mercado/bridgewise/analise-fundamentalista` | Análise fundamentalista do ativo no Bridgewise |
-| 🟡 | [`bridgewiseAnaliseTecnica`](#bridgewiseanalisetecnica) | `/v1/mercado/bridgewise/analise-tecnica` | Análise técnica do ativo no Bridgewise |
-| 🟡 | [`rendaFixaAtivos`](#rendafixaativos) | `/v1/renda-fixa/ativos` | Lista de ativos de renda fixa |
-| 🟡 | [`rendaFixaNegocioConsolidado`](#rendafixanegocioconsolidado) | `/v1/renda-fixa/negocio-consolidado` | Negócios consolidados de renda fixa |
-| 🟡 | [`rendaFixaNegocioANegocio`](#rendafixanegocioanegocio) | `/v1/renda-fixa/negocio-a-negocio` | Negócios operação a operação de renda fixa |
-| 🟡 | [`calcRFTitulosPublicos`](#calcrftitulospublicos) | `/v1/renda-fixa/calculadora/titulos-publicos` | Lista de títulos públicos da calculadora de renda fixa |
-| 🟡 | [`calcRFTitulosDebentures`](#calcrftitulosdebentures) | `/v1/renda-fixa/calculadora/titulos-debentures` | Lista de debêntures da calculadora de renda fixa |
-| 🟡 | [`calcRFTitulosCRA`](#calcrftituloscra) | `/v1/renda-fixa/calculadora/titulos-cra` | Lista de títulos CRA da calculadora de renda fixa |
-| 🟡 | [`calcRFTitulosCRI`](#calcrftituloscri) | `/v1/renda-fixa/calculadora/titulos-cri` | Lista de títulos CRI da calculadora de renda fixa |
-| 🟡 | [`calcRFCalculoPU`](#calcrfcalculopu) | `/v1/renda-fixa/calculadora/calculo-pu` | Cálculo de preço unitário (PU) de renda fixa |
-| 🟡 | [`transferenciaListadosBalcao`](#transferencialistadosbalcao) | `/v1/transferencia/listados-balcao` | Solicitações de ativos listados em balcão |
-| 🟡 | [`instituicoes`](#instituicoes) | `/v1/investidor/instituicoes` | Tabela de instituições financeiras habilitadas |
-| 🟡 | [`tiposEventos`](#tiposeventos) | `/v1/proventos/tipos-eventos` | Tabela de tipos de eventos provisionados |
-| 🟡 | [`tiposMovimentacoes`](#tiposmovimentacoes) | `/v1/investidor/tipos-movimentacoes` | Tabela de tipos de movimentações de extrato |
+| 🟡 | [`bridgewiseListaAtivos`](#bridgewiselistaativos) | `/v1/mercado/bridgewise/lista-ativos` | Lista de ativos do Bridgewise |
+| ✅ | [`bridgewisePesquisaAtivos`](#bridgewisepesquisaativos) | `/v1/mercado/bridgewise/pesquisa-ativos` | Pesquisa de ativos por nome ou ticker |
+| ✅ | [`bridgewiseCotacao`](#bridgewisecotacao) | `/v1/mercado/bridgewise/cotacao` | Cotação, variações e série de preços do ativo |
+| ✅ | [`bridgewiseDadosAtivo`](#bridgewisedadosativo) | `/v1/mercado/bridgewise/dados-ativo` | Setor, indústria e indicadores do ativo |
+| ✅ | [`bridgewiseDesempenho`](#bridgewisedesempenho) | `/v1/mercado/bridgewise/desempenho` | Desempenho do ativo por trimestre |
+| ✅ | [`bridgewiseComparativo`](#bridgewisecomparativo) | `/v1/mercado/bridgewise/comparativo` | Ativo comparado aos do mesmo setor |
+| ✅ | [`bridgewiseAnaliseFundamentalista`](#bridgewiseanalisefundamentalista) | `/v1/mercado/bridgewise/analise-fundamentalista` | Análise fundamentalista: DRE, fluxo de caixa, balanço, ESG |
+| 🟡 | [`bridgewiseAnaliseTecnica`](#bridgewiseanalisetecnica) | `/v1/mercado/bridgewise/analise-tecnica` | Análise técnica: suporte, resistência e tendência |
+| ✅ | [`calcRFTitulosPublicos`](#calcrftitulospublicos) | `/v1/renda-fixa/titulos-publicos` | Títulos públicos (Tesouro) da calculadora de renda fixa |
+| ✅ | [`calcRFTitulosDebentures`](#calcrftitulosdebentures) | `/v1/renda-fixa/debentures` | Debêntures da calculadora de renda fixa |
+| ✅ | [`calcRFTitulosCRA`](#calcrftituloscra) | `/v1/renda-fixa/cra` | CRA da calculadora de renda fixa |
+| ✅ | [`calcRFTitulosCRI`](#calcrftituloscri) | `/v1/renda-fixa/cri` | CRI da calculadora de renda fixa |
+| 🟡 | [`transferenciaListadosBalcao`](#transferencialistadosbalcao) | `/v1/transferencia/listados-balcao` | Solicitações de transferência de ativos listados em balcão |
+| ✅ | [`instituicoes`](#instituicoes) | `/v1/investidor/instituicoes` | Instituições financeiras (id e nome) |
+| ✅ | [`tiposEventos`](#tiposeventos) | `/v1/proventos/tipos-eventos` | Tipos de evento provisionado (dividendo, JCP etc.) |
+| ✅ | [`tiposMovimentacoes`](#tiposmovimentacoes) | `/v1/investidor/tipos-movimentacoes` | Tipos de movimentação do extrato |
 
 ## Sistema
 
@@ -453,14 +449,17 @@ Resposta:
 
 ### tiposEventos
 
-**Tabela de tipos de eventos provisionados** — 🟡 campos pendentes
+**Tipos de evento provisionado (dividendo, JCP etc.)** — ✅ confirmado
 
 - B3: `GET /negocio-eventosprovisionados/api/extrato-eventos-provisionados/v1.1/tipos-eventos`
 - API: `GET /v1/proventos/tipos-eventos`
 
 Resposta:
 
-- objeto (não mapeado)[]
+- `tiposEventos`: objeto[]
+  - `id`: number | number[] — Sic: a B3 manda uma lista de números, não um número
+  - `nomeTipoEvento`: string
+- `detalheStatusCode`: number
 
 ## Investidor
 
@@ -529,34 +528,43 @@ Resposta:
 
 ### instituicoes
 
-**Tabela de instituições financeiras habilitadas** — 🟡 campos pendentes
+**Instituições financeiras (id e nome)** — ✅ confirmado
 
 - B3: `GET /negocio-investidor/api/investidor/v1/instituicoes`
 - API: `GET /v1/investidor/instituicoes`
 
 Resposta:
 
-- objeto (não mapeado)[]
+- `instituicoes`: objeto[]
+  - `id`: string — Dígitos (CNPJ da instituição)
+  - `descricao`: string
 
 ### tiposMovimentacoes
 
-**Tabela de tipos de movimentações de extrato** — 🟡 campos pendentes
+**Tipos de movimentação do extrato** — ✅ confirmado
 
 - B3: `GET /negocio-investidor/api/investidor/v1/tipos-movimentacoes`
 - API: `GET /v1/investidor/tipos-movimentacoes`
 
 Resposta:
 
-- objeto (não mapeado)[]
+- `tiposMovimentacoes`: objeto[]
+  - `id`: number
+  - `descricao`: string
+- `excecoes`: qualquer[]
 
 ## Mercado
 
 ### bridgewiseListaAtivos
 
-**Lista de ativos disponíveis no Bridgewise** — 🟡 campos pendentes
+**Lista de ativos do Bridgewise** — 🟡 campos pendentes
 
 - B3: `GET /negocio-empresa/api/empresa/v1/bridgewise/lista-ativos`
 - API: `GET /v1/mercado/bridgewise/lista-ativos`
+
+Observações:
+
+- Responde 204 (sem corpo), com ou sem `pagina`/`tamanho`: o formato da lista não foi visto. Para listar ativos, use `pesquisa-ativos`.
 
 Resposta:
 
@@ -564,185 +572,296 @@ Resposta:
 
 ### bridgewisePesquisaAtivos
 
-**Pesquisa de ativos no Bridgewise** — 🟡 campos pendentes
+**Pesquisa de ativos por nome ou ticker** — ✅ confirmado
 
 - B3: `GET /negocio-empresa/api/empresa/v1/bridgewise/pesquisa-ativos`
 - API: `GET /v1/mercado/bridgewise/pesquisa-ativos`
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `busca` | string | sim | Termo para pesquisa de ativos |
+| `busca` | string | sim | Parte do ticker ou do nome (ex.: PETR) |
 
 Resposta:
 
-- objeto (não mapeado)[]
+- `data`: objeto[]
+  - `totalAtivos`: number
+  - `ativos`: objeto[]
+    - `ticker`: string
+    - `nome`: string
+    - `precoAlvo`: string
+    - `recomendacao`: objeto
+      - `valor`: string
+      - `descricao`: string
+- `links`: objeto
+  - `self`: string
+  - `first`: string
+  - `last`: string
+- `meta`: objeto
+  - `totalRecords`: number
+  - `totalPages`: number
 
 ### bridgewiseCotacao
 
-**Cotação de ativo no Bridgewise** — 🟡 campos pendentes
+**Cotação, variações e série de preços do ativo** — ✅ confirmado
 
 - B3: `GET /negocio-empresa/api/empresa/v1/bridgewise/{id}/cotacao`
 - API: `GET /v1/mercado/bridgewise/cotacao`
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `id` | string | sim | Identificador do ativo / ticker |
+| `id` | string | sim | Ticker, como devolvido por `pesquisa-ativos` (ex.: PETR3) |
+
+Observações:
+
+- O `{id}` da B3 aceita o ticker direto.
 
 Resposta:
 
-- objeto (não mapeado)
+- `data`: objeto
+  - `recomendacao`: objeto
+    - `valor`: string
+    - `descricao`: string
+  - `precoFechamento`: objeto
+    - `valor`: string
+    - `variacao`: string
+    - `positivo`: boolean
+  - `periodos`: objeto[]
+    - `nome`: string
+    - `variacao`: string
+    - `positivo`: boolean
+  - `dadosGrafico`: objeto[]
+    - `data`: string — Data ISO sem fuso (AAAA-MM-DDT00:00:00)
+    - `preco`: number
+    - `precoFormatado`: string
+  - `descricao`: string
+  - `marketCap`: string
+  - `volumeMedio`: string
+  - `beta`: string
+  - `dividendYield`: string
+  - `crescimentoReceita`: string
+  - `indicePL`: string
 
 ### bridgewiseDadosAtivo
 
-**Dados cadastrais e gerais do ativo no Bridgewise** — 🟡 campos pendentes
+**Setor, indústria e indicadores do ativo** — ✅ confirmado
 
 - B3: `GET /negocio-empresa/api/empresa/v1/bridgewise/{id}/dados-ativo`
 - API: `GET /v1/mercado/bridgewise/dados-ativo`
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `id` | string | sim | Identificador do ativo / ticker |
+| `id` | string | sim | Ticker (ex.: PETR3) |
 
 Resposta:
 
-- objeto (não mapeado)
+- `data`: objeto[]
+  - `setor`: string
+  - `industria`: string
+  - `marketCap`: string
+  - `dividendYield`: string
+  - `volumeMedio`: string
+  - `crescimentoReceita`: string
+  - `beta`: string
+  - `indicePL`: string
+- `links`: objeto
+  - `self`: string
+  - `first`: string
+  - `last`: string
+- `meta`: objeto
+  - `totalRecords`: number
+  - `totalPages`: number
 
 ### bridgewiseDesempenho
 
-**Desempenho histórico do ativo no Bridgewise** — 🟡 campos pendentes
+**Desempenho do ativo por trimestre** — ✅ confirmado
 
 - B3: `GET /negocio-empresa/api/empresa/v1/bridgewise/{id}/desempenho`
 - API: `GET /v1/mercado/bridgewise/desempenho`
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `id` | string | sim | Identificador do ativo / ticker |
+| `id` | string | sim | Ticker (ex.: PETR3) |
 
 Resposta:
 
-- objeto (não mapeado)
+- `data`: objeto[]
+  - `dataAnalise`: string — Data ISO sem fuso (AAAA-MM-DDT00:00:00)
+  - `trimestreAnalise`: string
+  - `variacao`: string
+  - `resumo`: string
+- `links`: objeto
+  - `self`: string
+  - `first`: string
+  - `last`: string
+- `meta`: objeto
+  - `totalRecords`: number
+  - `totalPages`: number
 
 ### bridgewiseComparativo
 
-**Comparativo de ativos no Bridgewise** — 🟡 campos pendentes
+**Ativo comparado aos do mesmo setor** — ✅ confirmado
 
 - B3: `GET /negocio-empresa/api/empresa/v1/bridgewise/{id}/comparativo`
 - API: `GET /v1/mercado/bridgewise/comparativo`
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `id` | string | sim | Identificador do ativo / ticker |
+| `id` | string | sim | Ticker (ex.: PETR3) |
 
 Resposta:
 
-- objeto (não mapeado)
+- `data`: objeto
+  - `ticker`: string
+  - `nome`: string
+  - `recomendacao`: objeto
+    - `valor`: string
+    - `descricao`: string
+  - `marketCap`: string
+  - `indicePL`: string
+  - `roe`: string
+  - `dividendYield`: string
+  - `ativosSetor`: objeto[]
+    - `ticker`: string
+    - `nome`: string
+    - `recomendacao`: objeto
+      - `valor`: string
+      - `descricao`: string
+    - `marketCap`: string
+    - `indicePL`: string
+    - `roe`: string
+    - `dividendYield`: string
+  - `mediaSetor`: objeto
+    - `recomendacao`: objeto
+      - `valor`: string
+      - `descricao`: string
+    - `marketCap`: string
+    - `indicePL`: string
+    - `roe`: string
+    - `dividendYield`: string
 
 ### bridgewiseAnaliseFundamentalista
 
-**Análise fundamentalista do ativo no Bridgewise** — 🟡 campos pendentes
+**Análise fundamentalista: DRE, fluxo de caixa, balanço, ESG** — ✅ confirmado
 
 - B3: `GET /negocio-empresa/api/empresa/v1/bridgewise/{id}/analise-fundamentalista`
 - API: `GET /v1/mercado/bridgewise/analise-fundamentalista`
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `id` | string | sim | Identificador do ativo / ticker |
-| `periodoCotacao` | string | não | Período da cotação |
+| `id` | string | sim | Ticker (ex.: PETR3) |
+| `periodoCotacao` | string | não | Período da cotação; os valores aceitos ainda não foram mapeados |
 
 Resposta:
 
-- objeto (não mapeado)
+- `data`: objeto[]
+  - `analiseFundamentalista`: objeto
+    - `descricao`: string
+    - `valor`: string
+  - `metaPreco`: string
+  - `potencialAlta`: objeto
+    - `valor`: string
+    - `positivo`: boolean
+  - `dre`: objeto
+    - `descricao`: string
+    - `valor`: string
+    - `resumo`: string
+  - `fluxoCaixa`: objeto
+    - `descricao`: string
+    - `valor`: string
+    - `resumo`: string
+  - `balancoPatrimonial`: objeto
+    - `descricao`: string
+    - `valor`: string
+    - `resumo`: string
+  - `forcaSetor`: objeto
+    - `descricao`: string
+    - `valor`: string
+  - `esg`: objeto
+    - `descricao`: string
+    - `valor`: string
+- `links`: objeto
+  - `self`: string
+  - `first`: string
+  - `last`: string
+- `meta`: objeto
+  - `totalRecords`: number
+  - `totalPages`: number
 
 ### bridgewiseAnaliseTecnica
 
-**Análise técnica do ativo no Bridgewise** — 🟡 campos pendentes
+**Análise técnica: suporte, resistência e tendência** — 🟡 campos pendentes
 
 - B3: `GET /negocio-empresa/api/empresa/v1/bridgewise/{id}/analise-tecnica`
 - API: `GET /v1/mercado/bridgewise/analise-tecnica`
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `id` | string | sim | Identificador do ativo / ticker |
-| `periodoCotacao` | string | não | Período da cotação |
+| `id` | string | sim | Ticker (ex.: PETR3) |
+| `periodoCotacao` | string | não | Período da cotação; os valores aceitos ainda não foram mapeados |
+
+Observações:
+
+- Responde 206 (conteúdo parcial). `tendenciaPreco` e `momentosMercado` vieram vazios.
 
 Resposta:
 
-- objeto (não mapeado)
+- `data`: objeto[]
+  - `analiseTecnica`: string
+  - `precoFechamento`: objeto
+    - `valor`: string
+    - `variacao`: string
+    - `positivo`: boolean
+  - `suporte`: string
+  - `resistencia`: string
+  - `descricao`: string
+  - `tendenciaPreco`: objeto (não mapeado)[] — Veio vazio nas consultas feitas; campos ainda não mapeados
+  - `momentosMercado`: objeto (não mapeado)[] — Veio vazio nas consultas feitas; campos ainda não mapeados
+- `links`: objeto
+  - `self`: string
+  - `first`: string
+  - `last`: string
+- `meta`: objeto
+  - `totalRecords`: number
+  - `totalPages`: number
 
 ## Renda Fixa
 
-### rendaFixaAtivos
-
-**Lista de ativos de renda fixa** — 🟡 campos pendentes
-
-- B3: `GET /negocio-rendafixa/api/rendafixa/v1/ativos`
-- API: `GET /v1/renda-fixa/ativos`
-
-| Parâmetro | Tipo | Obrigatório | Descrição |
-|---|---|---|---|
-| `CodigoInstrumento` | string | não | Código do instrumento financeiro |
-| `Pagina` | integer | não | Página da consulta; padrão `1` |
-| `TamanhoPagina` | integer | não | Quantidade de itens por página |
-
-Resposta:
-
-- objeto (não mapeado)
-
-### rendaFixaNegocioConsolidado
-
-**Negócios consolidados de renda fixa** — 🟡 campos pendentes
-
-- B3: `GET /negocio-rendafixa/api/rendafixa/v1/negocio-consolidado`
-- API: `GET /v1/renda-fixa/negocio-consolidado`
-
-| Parâmetro | Tipo | Obrigatório | Descrição |
-|---|---|---|---|
-| `DataNegocio` | string | não | Data do negócio (AAAA-MM-DD); formato `^\d{4}-\d{2}-\d{2}$` |
-| `Pagina` | integer | não | Página da consulta; padrão `1` |
-
-Resposta:
-
-- objeto (não mapeado)
-
-### rendaFixaNegocioANegocio
-
-**Negócios operação a operação de renda fixa** — 🟡 campos pendentes
-
-- B3: `GET /negocio-rendafixa/api/rendafixa/v1/negocio-a-negocio`
-- API: `GET /v1/renda-fixa/negocio-a-negocio`
-
-Resposta:
-
-- objeto (não mapeado)
-
 ### calcRFTitulosPublicos
 
-**Lista de títulos públicos da calculadora de renda fixa** — 🟡 campos pendentes
+**Títulos públicos (Tesouro) da calculadora de renda fixa** — ✅ confirmado
 
 - B3: `GET /negocio-calcrf/api/calcrf/v1/titulos/lista-titulos-publicos`
-- API: `GET /v1/renda-fixa/calculadora/titulos-publicos`
+- API: `GET /v1/renda-fixa/titulos-publicos`
 
 Resposta:
 
-- objeto (não mapeado)[]
+- `data`: objeto[]
+  - `idSelic`: number
+  - `emissor`: string
+  - `metodo`: string
+  - `dataExpiracao`: string
+  - `habilitarProjecao`: boolean
 
 ### calcRFTitulosDebentures
 
-**Lista de debêntures da calculadora de renda fixa** — 🟡 campos pendentes
+**Debêntures da calculadora de renda fixa** — ✅ confirmado
 
 - B3: `GET /negocio-calcrf/api/calcrf/v1/titulos/lista-titulos-debentures`
-- API: `GET /v1/renda-fixa/calculadora/titulos-debentures`
+- API: `GET /v1/renda-fixa/debentures`
 
 Resposta:
 
-- objeto (não mapeado)[]
+- `data`: objeto[]
+  - `codigoTitulo`: string
+  - `habilitarProjecao`: boolean
+  - `dataVencimento`: string — Data ISO sem fuso (AAAA-MM-DDT00:00:00)
 
 ### calcRFTitulosCRA
 
-**Lista de títulos CRA da calculadora de renda fixa** — 🟡 campos pendentes
+**CRA da calculadora de renda fixa** — ✅ confirmado
 
 - B3: `GET /negocio-calcrf/api/calcrf/v1/titulos/lista-titulos-cra`
-- API: `GET /v1/renda-fixa/calculadora/titulos-cra`
+- API: `GET /v1/renda-fixa/cra`
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
@@ -751,14 +870,17 @@ Resposta:
 
 Resposta:
 
-- objeto (não mapeado)[]
+- `data`: objeto[]
+  - `codigoTitulo`: string
+  - `habilitarProjecao`: boolean
+  - `dataVencimento`: string — Data ISO sem fuso (AAAA-MM-DDT00:00:00)
 
 ### calcRFTitulosCRI
 
-**Lista de títulos CRI da calculadora de renda fixa** — 🟡 campos pendentes
+**CRI da calculadora de renda fixa** — ✅ confirmado
 
 - B3: `GET /negocio-calcrf/api/calcrf/v1/titulos/lista-titulos-cri`
-- API: `GET /v1/renda-fixa/calculadora/titulos-cri`
+- API: `GET /v1/renda-fixa/cri`
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
@@ -766,24 +888,16 @@ Resposta:
 
 Resposta:
 
-- objeto (não mapeado)[]
-
-### calcRFCalculoPU
-
-**Cálculo de preço unitário (PU) de renda fixa** — 🟡 campos pendentes
-
-- B3: `GET /negocio-calcrf/api/calcrf/v1/calculadora-pu/realizar-calculo-pu`
-- API: `GET /v1/renda-fixa/calculadora/calculo-pu`
-
-Resposta:
-
-- objeto (não mapeado)
+- `data`: objeto[]
+  - `codigoTitulo`: string
+  - `habilitarProjecao`: boolean
+  - `dataVencimento`: string — Data ISO sem fuso (AAAA-MM-DDT00:00:00)
 
 ## Transferência
 
 ### transferenciaListadosBalcao
 
-**Solicitações de ativos listados em balcão** — 🟡 campos pendentes
+**Solicitações de transferência de ativos listados em balcão** — 🟡 campos pendentes
 
 - B3: `GET /api/transferencia-ativos/v3/solicitacoes/listados-balcao`
 - API: `GET /v1/transferencia/listados-balcao`
@@ -795,8 +909,8 @@ Resposta:
 
 Observações:
 
-- Observado status 200 na navegação ao vivo do portal.
+- Responde 200 com lista vazia para quem não tem solicitações; os campos dos itens não foram vistos.
 
 Resposta:
 
-- objeto (não mapeado)
+- objeto (não mapeado)[]

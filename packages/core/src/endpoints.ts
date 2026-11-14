@@ -46,7 +46,6 @@ const mesAno = ({ carga }: CargaContext) => ({ mes: Number(carga.slice(5, 7)), a
 
 const EP = "/negocio-eventosprovisionados/api/extrato-eventos-provisionados";
 const BW = "/negocio-empresa/api/empresa/v1/bridgewise";
-const RF = "/negocio-rendafixa/api/rendafixa/v1";
 const CALCRF = "/negocio-calcrf/api/calcrf/v1";
 
 export const endpoints = {
@@ -311,229 +310,169 @@ export const endpoints = {
     status: "confirmado",
   }),
 
-  // ---------- mercado (bridgewise) ----------
+  // ---------- mercado (Bridgewise): testado ao vivo em 13/11/2026 ----------
 
   bridgewiseListaAtivos: def({
     id: "bridgewiseListaAtivos",
     tag: "Mercado",
-    summary: "Lista de ativos disponíveis no Bridgewise",
+    summary: "Lista de ativos do Bridgewise",
     b3Path: `${BW}/lista-ativos`,
     route: "/v1/mercado/bridgewise/lista-ativos",
     query: z.object({}),
-    response: S.ListaNaoMapeada,
+    response: S.ListaNaoMapeada.nullable(),
     status: "campos-pendentes",
+    notes: ["Responde 204 (sem corpo), com ou sem `pagina`/`tamanho`: o formato da lista não foi visto. Para listar ativos, use `pesquisa-ativos`."],
   }),
 
   bridgewisePesquisaAtivos: def({
     id: "bridgewisePesquisaAtivos",
     tag: "Mercado",
-    summary: "Pesquisa de ativos no Bridgewise",
+    summary: "Pesquisa de ativos por nome ou ticker",
     b3Path: `${BW}/pesquisa-ativos`,
     route: "/v1/mercado/bridgewise/pesquisa-ativos",
-    query: z.object({
-      busca: z.string().describe("Termo para pesquisa de ativos"),
-    }),
-    response: S.ListaNaoMapeada,
-    status: "campos-pendentes",
+    query: z.object({ busca: z.string().min(1).describe("Parte do ticker ou do nome (ex.: PETR)") }),
+    response: S.BridgewisePesquisa,
+    status: "confirmado",
   }),
 
   bridgewiseCotacao: def({
     id: "bridgewiseCotacao",
     tag: "Mercado",
-    summary: "Cotação de ativo no Bridgewise",
+    summary: "Cotação, variações e série de preços do ativo",
     b3Path: `${BW}/{id}/cotacao`,
     route: "/v1/mercado/bridgewise/cotacao",
-    query: z.object({
-      id: z.string().describe("Identificador do ativo / ticker"),
-    }),
-    response: S.NaoMapeado,
-    status: "campos-pendentes",
+    query: z.object({ id: z.string().describe("Ticker, como devolvido por `pesquisa-ativos` (ex.: PETR3)") }),
+    response: S.BridgewiseCotacao,
+    status: "confirmado",
+    notes: ["O `{id}` da B3 aceita o ticker direto."],
   }),
 
   bridgewiseDadosAtivo: def({
     id: "bridgewiseDadosAtivo",
     tag: "Mercado",
-    summary: "Dados cadastrais e gerais do ativo no Bridgewise",
+    summary: "Setor, indústria e indicadores do ativo",
     b3Path: `${BW}/{id}/dados-ativo`,
     route: "/v1/mercado/bridgewise/dados-ativo",
-    query: z.object({
-      id: z.string().describe("Identificador do ativo / ticker"),
-    }),
-    response: S.NaoMapeado,
-    status: "campos-pendentes",
+    query: z.object({ id: z.string().describe("Ticker (ex.: PETR3)") }),
+    response: S.BridgewiseDadosAtivo,
+    status: "confirmado",
   }),
 
   bridgewiseDesempenho: def({
     id: "bridgewiseDesempenho",
     tag: "Mercado",
-    summary: "Desempenho histórico do ativo no Bridgewise",
+    summary: "Desempenho do ativo por trimestre",
     b3Path: `${BW}/{id}/desempenho`,
     route: "/v1/mercado/bridgewise/desempenho",
-    query: z.object({
-      id: z.string().describe("Identificador do ativo / ticker"),
-    }),
-    response: S.NaoMapeado,
-    status: "campos-pendentes",
+    query: z.object({ id: z.string().describe("Ticker (ex.: PETR3)") }),
+    response: S.BridgewiseDesempenho,
+    status: "confirmado",
   }),
 
   bridgewiseComparativo: def({
     id: "bridgewiseComparativo",
     tag: "Mercado",
-    summary: "Comparativo de ativos no Bridgewise",
+    summary: "Ativo comparado aos do mesmo setor",
     b3Path: `${BW}/{id}/comparativo`,
     route: "/v1/mercado/bridgewise/comparativo",
-    query: z.object({
-      id: z.string().describe("Identificador do ativo / ticker"),
-    }),
-    response: S.NaoMapeado,
-    status: "campos-pendentes",
+    query: z.object({ id: z.string().describe("Ticker (ex.: PETR3)") }),
+    response: S.BridgewiseComparativo,
+    status: "confirmado",
   }),
 
   bridgewiseAnaliseFundamentalista: def({
     id: "bridgewiseAnaliseFundamentalista",
     tag: "Mercado",
-    summary: "Análise fundamentalista do ativo no Bridgewise",
+    summary: "Análise fundamentalista: DRE, fluxo de caixa, balanço, ESG",
     b3Path: `${BW}/{id}/analise-fundamentalista`,
     route: "/v1/mercado/bridgewise/analise-fundamentalista",
     query: z.object({
-      id: z.string().describe("Identificador do ativo / ticker"),
-      periodoCotacao: z.string().optional().describe("Período da cotação"),
+      id: z.string().describe("Ticker (ex.: PETR3)"),
+      periodoCotacao: z.string().optional().describe("Período da cotação; os valores aceitos ainda não foram mapeados"),
     }),
-    response: S.NaoMapeado,
-    status: "campos-pendentes",
+    response: S.BridgewiseAnaliseFundamentalista,
+    status: "confirmado",
   }),
 
   bridgewiseAnaliseTecnica: def({
     id: "bridgewiseAnaliseTecnica",
     tag: "Mercado",
-    summary: "Análise técnica do ativo no Bridgewise",
+    summary: "Análise técnica: suporte, resistência e tendência",
     b3Path: `${BW}/{id}/analise-tecnica`,
     route: "/v1/mercado/bridgewise/analise-tecnica",
     query: z.object({
-      id: z.string().describe("Identificador do ativo / ticker"),
-      periodoCotacao: z.string().optional().describe("Período da cotação"),
+      id: z.string().describe("Ticker (ex.: PETR3)"),
+      periodoCotacao: z.string().optional().describe("Período da cotação; os valores aceitos ainda não foram mapeados"),
     }),
-    response: S.NaoMapeado,
+    response: S.BridgewiseAnaliseTecnica,
     status: "campos-pendentes",
+    notes: ["Responde 206 (conteúdo parcial). `tendenciaPreco` e `momentosMercado` vieram vazios."],
   }),
 
-  // ---------- renda fixa e títulos ----------
-
-  rendaFixaAtivos: def({
-    id: "rendaFixaAtivos",
-    tag: "Renda Fixa",
-    summary: "Lista de ativos de renda fixa",
-    b3Path: `${RF}/ativos`,
-    route: "/v1/renda-fixa/ativos",
-    query: z.object({
-      CodigoInstrumento: z.string().optional().describe("Código do instrumento financeiro"),
-      Pagina: S.PaginaParam.optional().describe("Página da consulta"),
-      TamanhoPagina: z.coerce.number().int().optional().describe("Quantidade de itens por página"),
-    }),
-    response: S.NaoMapeado,
-    status: "campos-pendentes",
-  }),
-
-  rendaFixaNegocioConsolidado: def({
-    id: "rendaFixaNegocioConsolidado",
-    tag: "Renda Fixa",
-    summary: "Negócios consolidados de renda fixa",
-    b3Path: `${RF}/negocio-consolidado`,
-    route: "/v1/renda-fixa/negocio-consolidado",
-    query: z.object({
-      DataNegocio: S.DataParam.optional().describe("Data do negócio (AAAA-MM-DD)"),
-      Pagina: S.PaginaParam.optional().describe("Página da consulta"),
-    }),
-    response: S.NaoMapeado,
-    status: "campos-pendentes",
-  }),
-
-  rendaFixaNegocioANegocio: def({
-    id: "rendaFixaNegocioANegocio",
-    tag: "Renda Fixa",
-    summary: "Negócios operação a operação de renda fixa",
-    b3Path: `${RF}/negocio-a-negocio`,
-    route: "/v1/renda-fixa/negocio-a-negocio",
-    query: z.object({}),
-    response: S.NaoMapeado,
-    status: "campos-pendentes",
-  }),
+  // ---------- títulos da calculadora de renda fixa ----------
 
   calcRFTitulosPublicos: def({
     id: "calcRFTitulosPublicos",
     tag: "Renda Fixa",
-    summary: "Lista de títulos públicos da calculadora de renda fixa",
+    summary: "Títulos públicos (Tesouro) da calculadora de renda fixa",
     b3Path: `${CALCRF}/titulos/lista-titulos-publicos`,
-    route: "/v1/renda-fixa/calculadora/titulos-publicos",
+    route: "/v1/renda-fixa/titulos-publicos",
     query: z.object({}),
-    response: S.ListaNaoMapeada,
-    status: "campos-pendentes",
+    response: S.CalcRFTitulosPublicos,
+    status: "confirmado",
   }),
 
   calcRFTitulosDebentures: def({
     id: "calcRFTitulosDebentures",
     tag: "Renda Fixa",
-    summary: "Lista de debêntures da calculadora de renda fixa",
+    summary: "Debêntures da calculadora de renda fixa",
     b3Path: `${CALCRF}/titulos/lista-titulos-debentures`,
-    route: "/v1/renda-fixa/calculadora/titulos-debentures",
+    route: "/v1/renda-fixa/debentures",
     query: z.object({}),
-    response: S.ListaNaoMapeada,
-    status: "campos-pendentes",
+    response: S.CalcRFTitulosPrivados,
+    status: "confirmado",
   }),
 
   calcRFTitulosCRA: def({
     id: "calcRFTitulosCRA",
     tag: "Renda Fixa",
-    summary: "Lista de títulos CRA da calculadora de renda fixa",
+    summary: "CRA da calculadora de renda fixa",
     b3Path: `${CALCRF}/titulos/lista-titulos-cra`,
-    route: "/v1/renda-fixa/calculadora/titulos-cra",
+    route: "/v1/renda-fixa/cra",
     query: z.object({
       dataInicio: S.DataParam.optional().describe("Data de início (AAAA-MM-DD)"),
       dataFim: S.DataParam.optional().describe("Data de fim (AAAA-MM-DD)"),
     }),
-    response: S.ListaNaoMapeada,
-    status: "campos-pendentes",
+    response: S.CalcRFTitulosPrivados,
+    status: "confirmado",
   }),
 
   calcRFTitulosCRI: def({
     id: "calcRFTitulosCRI",
     tag: "Renda Fixa",
-    summary: "Lista de títulos CRI da calculadora de renda fixa",
+    summary: "CRI da calculadora de renda fixa",
     b3Path: `${CALCRF}/titulos/lista-titulos-cri`,
-    route: "/v1/renda-fixa/calculadora/titulos-cri",
-    query: z.object({
-      dataInicio: S.DataParam.optional().describe("Data de início (AAAA-MM-DD)"),
-    }),
-    response: S.ListaNaoMapeada,
-    status: "campos-pendentes",
+    route: "/v1/renda-fixa/cri",
+    query: z.object({ dataInicio: S.DataParam.optional().describe("Data de início (AAAA-MM-DD)") }),
+    response: S.CalcRFTitulosPrivados,
+    status: "confirmado",
   }),
 
-  calcRFCalculoPU: def({
-    id: "calcRFCalculoPU",
-    tag: "Renda Fixa",
-    summary: "Cálculo de preço unitário (PU) de renda fixa",
-    b3Path: `${CALCRF}/calculadora-pu/realizar-calculo-pu`,
-    route: "/v1/renda-fixa/calculadora/calculo-pu",
-    query: z.object({}),
-    response: S.NaoMapeado,
-    status: "campos-pendentes",
-  }),
-
-  // ---------- transferência / balcão ----------
+  // ---------- balcão ----------
 
   transferenciaListadosBalcao: def({
     id: "transferenciaListadosBalcao",
     tag: "Transferência",
-    summary: "Solicitações de ativos listados em balcão",
+    summary: "Solicitações de transferência de ativos listados em balcão",
     b3Path: "/api/transferencia-ativos/v3/solicitacoes/listados-balcao",
     route: "/v1/transferencia/listados-balcao",
     query: z.object({
       pagina: S.PaginaParam.optional().describe("Página da consulta"),
       qtdRegistros: z.coerce.number().int().optional().describe("Quantidade de registros por página"),
     }),
-    response: S.NaoMapeado,
+    response: S.ListaNaoMapeada,
     status: "campos-pendentes",
-    notes: ["Observado status 200 na navegação ao vivo do portal."],
+    notes: ["Responde 200 com lista vazia para quem não tem solicitações; os campos dos itens não foram vistos."],
   }),
 
   // ---------- tabelas de apoio ----------
@@ -541,34 +480,34 @@ export const endpoints = {
   instituicoes: def({
     id: "instituicoes",
     tag: "Investidor",
-    summary: "Tabela de instituições financeiras habilitadas",
+    summary: "Instituições financeiras (id e nome)",
     b3Path: "/negocio-investidor/api/investidor/v1/instituicoes",
     route: "/v1/investidor/instituicoes",
     query: z.object({}),
-    response: S.ListaNaoMapeada,
-    status: "campos-pendentes",
+    response: S.Instituicoes,
+    status: "confirmado",
   }),
 
   tiposEventos: def({
     id: "tiposEventos",
     tag: "Proventos",
-    summary: "Tabela de tipos de eventos provisionados",
+    summary: "Tipos de evento provisionado (dividendo, JCP etc.)",
     b3Path: `${EP}/v1.1/tipos-eventos`,
     route: "/v1/proventos/tipos-eventos",
     query: z.object({}),
-    response: S.ListaNaoMapeada,
-    status: "campos-pendentes",
+    response: S.TiposEventos,
+    status: "confirmado",
   }),
 
   tiposMovimentacoes: def({
     id: "tiposMovimentacoes",
     tag: "Investidor",
-    summary: "Tabela de tipos de movimentações de extrato",
+    summary: "Tipos de movimentação do extrato",
     b3Path: "/negocio-investidor/api/investidor/v1/tipos-movimentacoes",
     route: "/v1/investidor/tipos-movimentacoes",
     query: z.object({}),
-    response: S.ListaNaoMapeada,
-    status: "campos-pendentes",
+    response: S.TiposMovimentacoes,
+    status: "confirmado",
   }),
 } as const;
 

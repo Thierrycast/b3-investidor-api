@@ -48,9 +48,10 @@ export function parseApiError(status: number, path: string, text: string): B3Api
   }
   if (typeof body === "string") return new B3ApiError(body, "regra", status, path);
   if (body && typeof body === "object" && "errors" in body) {
-    const b = body as { title?: string; errors?: Record<string, string[]> };
+    // Os valores costumam ser listas de mensagens, mas já vieram como texto ou objeto.
+    const b = body as { title?: string; errors?: Record<string, unknown> };
     const fields = Object.entries(b.errors ?? {})
-      .map(([k, v]) => `${k}: ${v.join("; ")}`)
+      .map(([k, v]) => `${k}: ${(Array.isArray(v) ? v : [v]).map((m) => (typeof m === "string" ? m : JSON.stringify(m))).join("; ")}`)
       .join(" | ");
     return new B3ApiError(fields || b.title || "Erro de validação", "validacao", status, path, b.errors);
   }

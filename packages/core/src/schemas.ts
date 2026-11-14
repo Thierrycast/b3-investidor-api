@@ -130,6 +130,126 @@ export const ResumoMensalRecebidos = z.looseObject({
 
 export const ListaNaoMapeada = z.array(NaoMapeado);
 
+// ---------- mercado (Bridgewise), observado em 13/11/2026 ----------
+// Valores numéricos chegam como texto já formatado ("12,3%"). Respostas vêm em { data, links, meta }.
+
+const Recomendacao = z.looseObject({ valor: str(), descricao: str() });
+const Preco = z.looseObject({ valor: str(), variacao: str(), positivo: bool() });
+const ValorDescrito = z.looseObject({ descricao: str(), valor: str(), resumo: str() });
+const PaginaBridgewise = {
+  links: z.looseObject({ self: str(), first: str(), last: str() }).nullish(),
+  meta: z.looseObject({ totalRecords: num(), totalPages: num() }).nullish(),
+};
+const indicadoresAtivo = { marketCap: str(), indicePL: str(), roe: str(), dividendYield: str() };
+
+export const BridgewisePesquisa = z.looseObject({
+  data: z.array(
+    z.looseObject({
+      totalAtivos: num(),
+      ativos: z.array(z.looseObject({ ticker: str(), nome: str(), precoAlvo: str(), recomendacao: Recomendacao.nullish() })),
+    }),
+  ),
+  ...PaginaBridgewise,
+});
+
+export const BridgewiseCotacao = z.looseObject({
+  data: z.looseObject({
+    recomendacao: Recomendacao.nullish(),
+    precoFechamento: Preco.nullish(),
+    periodos: z.array(z.looseObject({ nome: str(), variacao: str(), positivo: bool() })),
+    dadosGrafico: z.array(z.looseObject({ data: dataIso(), preco: num(), precoFormatado: str() })),
+    descricao: str(),
+    marketCap: str(),
+    volumeMedio: str(),
+    beta: str(),
+    dividendYield: str(),
+    crescimentoReceita: str(),
+    indicePL: str(),
+  }),
+});
+
+export const BridgewiseDadosAtivo = z.looseObject({
+  data: z.array(z.looseObject({ setor: str(), industria: str(), marketCap: str(), dividendYield: str(), volumeMedio: str(), crescimentoReceita: str(), beta: str(), indicePL: str() })),
+  ...PaginaBridgewise,
+});
+
+export const BridgewiseDesempenho = z.looseObject({
+  data: z.array(z.looseObject({ dataAnalise: dataIso(), trimestreAnalise: str(), variacao: str(), resumo: str() })),
+  ...PaginaBridgewise,
+});
+
+export const BridgewiseComparativo = z.looseObject({
+  data: z.looseObject({
+    ticker: str(),
+    nome: str(),
+    recomendacao: Recomendacao.nullish(),
+    ...indicadoresAtivo,
+    ativosSetor: z.array(z.looseObject({ ticker: str(), nome: str(), recomendacao: Recomendacao.nullish(), ...indicadoresAtivo })),
+    mediaSetor: z.looseObject({ recomendacao: Recomendacao.nullish(), ...indicadoresAtivo }).nullish(),
+  }),
+});
+
+export const BridgewiseAnaliseFundamentalista = z.looseObject({
+  data: z.array(
+    z.looseObject({
+      analiseFundamentalista: z.looseObject({ descricao: str(), valor: str() }).nullish(),
+      metaPreco: str(),
+      potencialAlta: z.looseObject({ valor: str(), positivo: bool() }).nullish(),
+      dre: ValorDescrito.nullish(),
+      fluxoCaixa: ValorDescrito.nullish(),
+      balancoPatrimonial: ValorDescrito.nullish(),
+      forcaSetor: z.looseObject({ descricao: str(), valor: str() }).nullish(),
+      esg: z.looseObject({ descricao: str(), valor: str() }).nullish(),
+    }),
+  ),
+  ...PaginaBridgewise,
+});
+
+export const BridgewiseAnaliseTecnica = z.looseObject({
+  data: z.array(
+    z.looseObject({
+      analiseTecnica: str(),
+      precoFechamento: Preco.nullish(),
+      suporte: str(),
+      resistencia: str(),
+      descricao: str(),
+      tendenciaPreco: z.array(NaoMapeado).describe("Veio vazio nas consultas feitas; campos ainda não mapeados"),
+      momentosMercado: z.array(NaoMapeado).describe("Veio vazio nas consultas feitas; campos ainda não mapeados"),
+    }),
+  ),
+  ...PaginaBridgewise,
+});
+
+// ---------- títulos da calculadora de renda fixa ----------
+
+export const CalcRFTitulosPublicos = z.looseObject({
+  data: z.array(z.looseObject({ idSelic: num(), emissor: str(), metodo: str(), dataExpiracao: str(), habilitarProjecao: bool() })),
+});
+
+/** Debêntures, CRA e CRI têm o mesmo formato. */
+export const CalcRFTitulosPrivados = z.looseObject({
+  data: z.array(z.looseObject({ codigoTitulo: str(), habilitarProjecao: bool(), dataVencimento: dataIso() })),
+});
+
+// ---------- tabelas de apoio ----------
+
+export const Instituicoes = z.looseObject({ instituicoes: z.array(z.looseObject({ id: str().describe("Dígitos (CNPJ da instituição)"), descricao: str() })) });
+
+export const TiposEventos = z.looseObject({
+  tiposEventos: z.array(
+    z.looseObject({
+      id: z.union([z.number(), z.array(z.number())]).nullish().describe("Sic: a B3 manda uma lista de números, não um número"),
+      nomeTipoEvento: str(),
+    }),
+  ),
+  detalheStatusCode: num(),
+});
+
+export const TiposMovimentacoes = z.looseObject({
+  tiposMovimentacoes: z.array(z.looseObject({ id: num(), descricao: str() })),
+  excecoes: z.array(z.unknown()).nullish(),
+});
+
 // ---------- página inicial ----------
 
 /** Variação do patrimônio. A B3 manda os valores já formatados para exibição (texto pt-BR). */

@@ -14,6 +14,7 @@ Legenda:
 | 🟢 | vista ao vivo; o status vem entre colchetes |
 | 📄 | só no código do portal; ainda não chamada |
 | ✋ | escrita (POST/PUT/PATCH): fora do escopo, porque o projeto é só leitura |
+| 🔴 | chamada ao vivo falhou (status entre colchetes); fica fora do registro até descobrirmos os parâmetros |
 
 O prefixo `{servico}` indica que o serviço (`negocio-…`) não foi identificado no código; os relatórios (`api/relatorio/…`) parecem ser servidos pelo serviço de cada extrato.
 Telas que carregaram na navegação: `/extrato/{movimentacao,negociacao,eventos-provisionados,ofertas-publicas}`, `/minha-carteira/{visao-geral,investimentos,acompanhar-mercado}`, `/proventos/{visao-geral,recebidos,receber,calendario,radar}`, `/relatorios/{mensal-consolidado,informes}`, `/voto-a-distancia/{boletim,historico}`, `/clube-b3`, `/renda-fixa`, `/renda-fixa/ativos`, `/publicacoes`, `/calculadora-renda-fixa`, `/calculadoras-ir`, `/portabilidade/minhas-solicitacoes`, `/minha-conta/central-de-notificacoes`.
@@ -66,7 +67,7 @@ Telas que carregaram na navegação: `/extrato/{movimentacao,negociacao,eventos-
 |---|---|---|---|
 | 📄 | ? | `/negocio-calcrf/api/calcrf/v1/calculadora-di/lista-periodo-disponivel` | — |
 | 📄 | ? | `/negocio-calcrf/api/calcrf/v1/calculadora-di/realizar-calculo-di` | — |
-| ✅ `calcRFCalculoPU` | GET | `/negocio-calcrf/api/calcrf/v1/calculadora-pu/realizar-calculo-pu` | — |
+| 🔴 [400] | GET | `/negocio-calcrf/api/calcrf/v1/calculadora-pu/realizar-calculo-pu` | — |
 | 📄 | ? | `/negocio-calcrf/api/calcrf/v1/calculadora-rendimento/realizar-calculo-rendimento` | — |
 | 📄 | ? | `/negocio-calcrf/api/calcrf/v1/titulos` | — |
 | ✅ `calcRFTitulosCRA` | GET | `/negocio-calcrf/api/calcrf/v1/titulos/lista-titulos-cra` | `dataFim` `dataInicio` |
@@ -228,10 +229,10 @@ Telas que carregaram na navegação: `/extrato/{movimentacao,negociacao,eventos-
 
 | | Método | Rota | Parâmetros |
 |---|---|---|---|
-| ✅ `rendaFixaAtivos` | GET | `/negocio-rendafixa/api/rendafixa/v1/ativos` | `CodigoInstrumento` `Pagina` `TamanhoPagina` |
+| 🔴 [500] | GET | `/negocio-rendafixa/api/rendafixa/v1/ativos` | `CodigoInstrumento` `Pagina` `TamanhoPagina` |
 | 📄 | GET | `/negocio-rendafixa/api/rendafixa/v1/gpt/resposta` | `Pergunta` `SessionId` |
-| ✅ `rendaFixaNegocioANegocio` | GET | `/negocio-rendafixa/api/rendafixa/v1/negocio-a-negocio` | — |
-| ✅ `rendaFixaNegocioConsolidado` | GET | `/negocio-rendafixa/api/rendafixa/v1/negocio-consolidado` | `DataNegocio` `Pagina` |
+| 🔴 [500] | GET | `/negocio-rendafixa/api/rendafixa/v1/negocio-a-negocio` | — |
+| 🔴 [500] | GET | `/negocio-rendafixa/api/rendafixa/v1/negocio-consolidado` | `DataNegocio` `Pagina` |
 
 ## sistema
 
@@ -264,6 +265,6 @@ Telas que carregaram na navegação: `/extrato/{movimentacao,negociacao,eventos-
 | 🟢 [200] | GET | `/negocio-voto/api/voto/v3/assembleia/investidor` | `dataFim` `dataInicio` `filtrarVotadas` `paginaAtual` `situacaoAssembleia` `tamanhoPagina` `tipoAssembleia` |
 
 ---
-135 rotas no mapa; 86 de leitura ainda fora do registro.
+135 rotas no mapa; 90 de leitura ainda fora do registro.
 
 *Gerado por: Claude Code (claude-opus-5-5) — 2026-11-13.*
