@@ -3,6 +3,16 @@
 O que foi observado no portal, com data e método. Registre **só nomes, tipos e comportamentos**: nunca valores, tokens ou dados pessoais.
 Coisas novas vão no topo.
 
+## 2026-11-14 — fluxo do login e campos de fachada
+
+Método: login real no Chrome sem janela de um servidor Linux (argos), registrando só método, caminho, nomes de campos e status.
+
+- Com `doc_hint`, a primeira tela já traz o CPF preenchido e a senha visível; a tela de CPF (`#DOC_INPUT`) não apareceu.
+- A senha visível (`PASS_INPUT`) é fachada do campo real `password`, preenchido em eventos de tecla. Com `fill` o `POST SelfAsserted` não é enviado; digitando tecla a tecla, é. O `b3 login` usava `fill` e foi corrigido.
+- Passos do B2C: `SelfAsserted` (CPF, senha, `g-recaptcha-response-toms`…) → `SendCode` → `VerifyCode` → `SelfAsserted` → `confirmed` → 302 para o site com `code` (detalhes em `docs/auth.md`).
+- `g-recaptcha-response-toms` não é o reCAPTCHA do Google (nenhum script ou requisição dele): é o token de risco do SDK antifraude da página (`ts-platform-websdk.js`). Login só por HTTP exigiria fabricar esse token; descartado.
+- Chromium do Alpine (`chromium-headless-shell`) roda o login sem janela em container.
+
 ## 2026-11-13 — validade da sessão
 
 - Em cada renovação, o `refresh_token_expires_in` vem menor: aponta sempre para ~24 h depois do login original.
