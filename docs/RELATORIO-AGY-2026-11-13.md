@@ -13,8 +13,8 @@ testadas ao vivo e corrigidas. Este arquivo registra o que foi visto. Só tipos 
 | `bridgewiseDesempenho` | 200 | ✅ |
 | `bridgewiseComparativo` | 200 | ✅ |
 | `bridgewiseAnaliseFundamentalista` | 200 | ✅ |
-| `bridgewiseAnaliseTecnica` | 206 | 🟡 `tendenciaPreco` e `momentosMercado` vieram vazios |
-| `bridgewiseListaAtivos` | 204 | 🟡 sem corpo, com ou sem `pagina`/`tamanho` |
+| `bridgewiseAnaliseTecnica` | 206 | ✅ a B3 responde 206 em todos os ativos testados; as duas listas internas vêm sempre vazias (campos do item vêm do código do portal) |
+| `bridgewiseListaAtivos` | 204 | 🟡 é a lista de ativos **da sua carteira** (o portal chama de `ativosCarteira`); vazia porque a conta só tem renda fixa. Mesmo formato de `pesquisa-ativos` |
 | `calcRFTitulosPublicos` | 200 | ✅ |
 | `calcRFTitulosDebentures` | 200 | ✅ |
 | `calcRFTitulosCRA` | 200 | ✅ |
@@ -25,7 +25,7 @@ testadas ao vivo e corrigidas. Este arquivo registra o que foi visto. Só tipos 
 | `tiposEventos` | 200 | ✅ |
 | `tiposMovimentacoes` | 200 | ✅ |
 
-17 rotas no registro: 13 ✅ e 4 🟡. Todas também foram chamadas pelo servidor HTTP (`b3 serve`) e responderam como esperado; falta de parâmetro obrigatório dá 400. Em todas, `b3 shapes` não encontrou divergência nem campo fora do schema.
+17 rotas no registro: 15 ✅ e 2 🟡 (`lista-ativos` e `listados-balcao` dependem de dados da conta de teste). Todas também foram chamadas pelo servidor HTTP (`b3 serve`) e responderam como esperado; falta de parâmetro obrigatório dá 400. Em todas, `b3 shapes` não encontrou divergência nem campo fora do schema.
 
 ## Fora do registro
 

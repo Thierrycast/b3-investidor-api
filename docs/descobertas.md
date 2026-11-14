@@ -56,3 +56,13 @@ Depois, chamadas diretas de um servidor Linux.
 - Telas do portal: `/extrato/*`, `/minha-carteira/*`, `/proventos/*`, `/relatorios/*`, `/voto-a-distancia/*`, `/renda-fixa`, `/publicacoes`, `/clube-b3`, `/calculadora-renda-fixa`, `/calculadoras-ir`, `/portabilidade/*`. Resultado em [mapa-rotas.md](mapa-rotas.md).
 - `transferencia-ativos/v2/solicitacoes/pendentes` voltou a dar 504 (4 de 4). A portabilidade usa `/api/transferencia-ativos/v3/...` sem prefixo `negocio-`.
 - `investidor/v1/notificacoes/leitura` provavelmente marca notificações como lidas: tem efeito colateral e fica fora da API.
+
+## 2026-11-13 — rotas de mercado e referência (teste ao vivo)
+
+- **Ler o código do portal:** o `www.investidor.b3.com.br` fica atrás do Cloudflare e recusa `curl`; o host da API (`investidor.b3.com.br`) não serve os bundles. Um Chrome real (`playwright-core`, `channel: "chrome"`, com janela) abre `/assets/mf.manifest.json` e permite `fetch` dos `remoteEntry.js` e dos chunks; `grep` nos chunks mostra os parâmetros de cada chamada. Foi assim que se achou `periodoCotacao` e os filtros da renda fixa.
+- **Bridgewise:** o `{id}` aceita o ticker direto (PETR3). `periodoCotacao` existe só em `cotacao`: `D1`, `D5` (padrão), `M1`, `M6`, `YTD`, `Y1`, `Y2`, `Y5`; outro valor dá 400. `lista-ativos` é a lista dos ativos da carteira (204 quando não há). `analise-tecnica` responde 206, com as duas listas internas vazias.
+- **Cálculo de PU:** `codigo` + `dataCalculo`. A B3 aceitou datas futuras e fins de semana; sem `dataCalculo` dá 400 "Data de cálculo inválida". O código vem de `lista-titulos-*` (`codigoTitulo`, ou `idSelic` para título público).
+- **Renda fixa** (`/negocio-rendafixa/...`): valida parâmetros (`Pagina=0` dá 400) e responde 500 genérico em seguida, em qualquer combinação, inclusive com os parâmetros do portal. A variante `negocio-rendafixa-master` dá 404 no mesmo gateway.
+- **Formatos que diferem do esperado:** a maioria das listas vem em objeto (`{ data: [...] }`, `{ instituicoes: [...] }`), não em array; `tiposEventos[].id` é uma lista de números.
+- **Erros da B3:** o corpo de erro de validação pode trazer `errors` com valores que não são lista; o parser passou a aceitar.
+- **`.env` com `B3_SESSION_FILE=` vazio:** o servidor tratava como caminho e disparava o login automático; agora usa o padrão.

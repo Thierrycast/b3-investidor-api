@@ -21,8 +21,13 @@ Estado em 2026-11-13. Ajude onde puder: veja [CONTRIBUTING.md](CONTRIBUTING.md).
 - [x] **Mapa dos micro-frontends** (13/11/2026): 135 rotas em [docs/mapa-rotas.md](docs/mapa-rotas.md), vindas do código dos 21 micro-frontends e da navegação ao vivo (89 de leitura fora do registro).
 - [ ] **Implementar as rotas de leitura do mapa** no registro. Prioridades:
   - [x] 17 rotas implementadas e conferidas ao vivo (e pelo servidor HTTP) em 13/11/2026: 8 do Bridgewise, 4 listas de títulos e o cálculo de PU, balcão e 3 tabelas de apoio;
-  - [ ] **renda fixa** (`ativos`, `negocio-consolidado`, `negocio-a-negocio`): a B3 valida os parâmetros (`Pagina` fora de 1..n dá 400) e depois responde 500, com qualquer combinação. Fora do registro. Tentar de novo mais tarde e, se persistir, `b3 discover` na tela `/renda-fixa/ativos`;
-  - [ ] `bridgewise/lista-ativos` responde 204 sem corpo; `periodoCotacao`: valores aceitos não mapeados;
+  - [ ] **renda fixa** (`ativos`, `negocio-consolidado`, `negocio-a-negocio`): fora do registro porque a B3 responde 500 em tudo, em 4 tentativas ao longo de 13/11/2026, com os parâmetros exatos do portal. Quando voltar, os parâmetros (lidos do código do portal) são:
+    - `ativos`: `Pagina`, `TamanhoPagina`; opcionais `CodigoInstrumento`, `CodigoTipoInstrumento`, `CodigoIsin`, `Indexador`, `SetorFinanceiro`, `DataVencimento.DataInicioVencimento`/`DataFimVencimento`, `DataEmissao.DataInicioEmissao`/`DataFimEmissao`;
+    - `negocio-a-negocio`: `DataNegocio`, `Pagina`, `TamanhoPagina`, `VolumeFinanceiro`; opcionais `CodigoInstrumento`, `CodigoTipoInstrumento`;
+    - `negocio-consolidado`: `Periodo.DataInicio`/`Periodo.DataFim`, `Pagina`, `TamanhoPagina`; opcionais `CodigoTipoSimbolo`, `Simbolo`, `NomeInstituicaoEmissora`, `NomeDevedor`, `Ordenacao.CodigoTipoOrdenacao`, `Ordenacao.NomeCampoOrdenacao`;
+  - [ ] `transferencia-ativos/v3/solicitacoes/listados-balcao` devolve `[]` na conta de teste: falta alguém com solicitações de portabilidade para mapear os campos do item;
+  - [ ] `bridgewise/lista-ativos` (ativos da *sua* carteira) responde 204 na conta de teste, que só tem renda fixa; o formato esperado é o de `pesquisa-ativos`;
+  - [ ] `bridgewise/{id}/analise-tecnica`: `tendenciaPreco` e `momentosMercado` vêm sempre vazios (resposta 206);
   - [ ] extratos de ofertas públicas, garantias e eventos a receber;
   - [ ] calendário de eventos;
   - [ ] informe de rendimentos e downloads de relatório (PDF/planilha);

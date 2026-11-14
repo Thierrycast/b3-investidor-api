@@ -140,6 +140,17 @@ const PaginaBridgewise = {
   links: z.looseObject({ self: str(), first: str(), last: str() }).nullish(),
   meta: z.looseObject({ totalRecords: num(), totalPages: num() }).nullish(),
 };
+/** Janela da série de preços de `cotacao` (valores do portal; outro valor dá 400). */
+export const PeriodoCotacao = z.enum(["D1", "D5", "M1", "M6", "YTD", "Y1", "Y2", "Y5"]);
+
+/** Item de `tendenciaPreco` e `momentosMercado`. Campos tirados do código do portal; a B3 só devolveu listas vazias. */
+const ParametroTecnico = z.looseObject({
+  nomeParametro: str(),
+  valorParametro: z.union([z.string(), z.number()]).nullish(),
+  textoScore: str(),
+  descricaoParametro: str(),
+});
+
 const indicadoresAtivo = { marketCap: str(), indicePL: str(), roe: str(), dividendYield: str() };
 
 export const BridgewisePesquisa = z.looseObject({
@@ -213,8 +224,8 @@ export const BridgewiseAnaliseTecnica = z.looseObject({
       suporte: str(),
       resistencia: str(),
       descricao: str(),
-      tendenciaPreco: z.array(NaoMapeado).describe("Veio vazio nas consultas feitas; campos ainda não mapeados"),
-      momentosMercado: z.array(NaoMapeado).describe("Veio vazio nas consultas feitas; campos ainda não mapeados"),
+      tendenciaPreco: z.array(ParametroTecnico).describe("Sempre vazio nas consultas feitas; campos do item conforme o portal"),
+      momentosMercado: z.array(ParametroTecnico).describe("Sempre vazio nas consultas feitas; campos do item conforme o portal"),
     }),
   ),
   ...PaginaBridgewise,

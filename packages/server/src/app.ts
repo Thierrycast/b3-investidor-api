@@ -6,6 +6,7 @@ import { z } from "zod";
 import { B3ApiError, B3AuthError, B3Client, endpointList, type EndpointId } from "@b3-investidor/core";
 import { SessionKeeper } from "./keeper";
 import type { LoginManager } from "./login-manager";
+import { CABECALHOS_B3, COMPONENTES, INFO, SESSAO, TAGS, errosB3 } from "./openapi";
 
 export interface ServerOptions {
   client: B3Client;
@@ -75,31 +76,17 @@ export async function buildServer(opts: ServerOptions): Promise<FastifyInstance>
   await app.register(swagger, {
     openapi: {
       openapi: "3.0.3",
-      info: {
-        title: "B3 Investidor API (não oficial)",
-        version: opts.version ?? "0.1.0",
-        description:
-          "API HTTP sobre a Área do Investidor da B3. **Não oficial e sem vínculo com a B3.** Use só com os seus próprios dados.\n\n" +
-          "Todas as rotas exigem o header `x-api-key`. Datas no formato AAAA-MM-DD. " +
-          "Quando um parâmetro é limitado à data da última carga, o header `x-b3-ajustes` informa o que mudou.",
-      },
-      tags: [
-        { name: "Sessão", description: "Estado e envio da sessão (refresh_token)" },
-        { name: "Sistema" },
-        { name: "Carteira" },
-        { name: "Extratos" },
-        { name: "Proventos" },
-        { name: "Início", description: "Cards da página inicial do portal" },
-        { name: "Investidor", description: "Cadastro e perfil (dados pessoais)" },
-        { name: "Mercado", description: "Mercado e análises Bridgewise" },
-        { name: "Renda Fixa", description: "Renda fixa e títulos públicos/privados" },
-        { name: "Transferência", description: "Transferência e balcão" },
-      ],
-      components: { securitySchemes: { apiKey: { type: "apiKey", in: "header", name: "x-api-key" } } },
+      info: { ...INFO, version: opts.version ?? "0.1.0" },
+      servers: [{ url: "/", description: "Este servidor" }],
+      tags: TAGS,
+      components: COMPONENTES,
       security: [{ apiKey: [] }],
     },
   });
-  await app.register(swaggerUi, { routePrefix: "/docs" });
+  await app.register(swaggerUi, {
+    routePrefix: "/docs",
+    uiConfig: { docExpansion: "list", deepLinking: true, displayRequestDuration: true, filter: true, persistAuthorization: true, tryItOutEnabled: true },
+  });
   app.get("/openapi.json", { schema: { hide: true } }, async () => app.swagger());
 
   app.addHook("onRequest", async (req, reply) => {
@@ -154,13 +141,13 @@ export async function buildServer(opts: ServerOptions): Promise<FastifyInstance>
 
   // ---------- sessão ----------
 
-  app.get("/v1/health", { schema: { tags: ["Sessão"], summary: "Estado da sessão, da renovação e do login automático" } }, async () => ({
+  app.get("/v1/health", { schema: { tags: ["Sessão"], summary: "Estado da sessão, da renovação e do login automático", operationId: "health", response: SESSAO.health } }, async () => ({
     ok: true,
     sessao: opts.keeper?.state ?? { status: "desconhecido" },
     login: lm ? { automatico: lm.enabled, ...lm.state } : { automatico: false },
   }));
 
-  app.get("/v1/login", { schema: { tags: ["Sessão"], summary: "Estado do login automático" } }, async () => ({
+  app.get("/v1/login", { schema: { tags: ["Sessão"], summary: "Estado do login automático", operationId: "loginEstado", response: SESSAO.login } }, async () => ({
     automatico: lm?.enabled ?? false,
     ...(lm?.state ?? { fase: "parado" }),
   }));
@@ -171,6 +158,8 @@ export async function buildServer(opts: ServerOptions): Promise<FastifyInstance>
       schema: {
         tags: ["Sessão"],
         summary: "Inicia um login agora (com as credenciais da configuração)",
+        operationId: "loginIniciar",
+        response: SESSAO.iniciarLogin,
         description:
           "Abre o login da B3 sem janela, com B3_CPF/B3_SENHA (ou o cofre). A B3 envia um código por e-mail; " +
           "a resposta volta com `fase: aguardando_codigo` e o código vai em `POST /v1/login/codigo`. " +
@@ -191,6 +180,8 @@ export async function buildServer(opts: ServerOptions): Promise<FastifyInstance>
       schema: {
         tags: ["Sessão"],
         summary: "Envia o código de verificação recebido por e-mail",
+        operationId: "loginCodigo",
+        response: SESSAO.codigo,
         description: "Só funciona com o login em `fase: aguardando_codigo`. O código nunca é registrado em log.",
         body: jsonSchema(CodigoBody, "input"),
       },
@@ -210,6 +201,8 @@ export async function buildServer(opts: ServerOptions): Promise<FastifyInstance>
       schema: {
         tags: ["Sessão"],
         summary: "Grava uma sessão nova (enviada pelo `b3 login --push`)",
+        operationId: "sessaoGravar",
+        response: SESSAO.sessao,
         description: "O refresh_token é validado na hora (uma renovação) e gravado no armazenamento do servidor. Nunca é devolvido.",
         body: jsonSchema(SessionBody, "input"),
       },
@@ -242,8 +235,9 @@ export async function buildServer(opts: ServerOptions): Promise<FastifyInstance>
           operationId: ep.id,
           querystring: jsonSchema(query, "input"),
           response: {
-            200: { description: "Resposta da B3 (campos desconhecidos são repassados)", ...jsonSchema(ep.response, "output") },
-            204: { description: "A B3 respondeu sem conteúdo (ex.: nenhum dado para o filtro)", type: "null" },
+            200: { description: "Resposta da B3 (campos desconhecidos são repassados)", headers: CABECALHOS_B3, ...jsonSchema(ep.response, "output") },
+            204: { description: "A B3 respondeu sem conteúdo (ex.: nenhum dado para o filtro ou a conta)", type: "null" },
+            ...errosB3(Object.keys(ep.query.shape).length > 0),
           },
         },
       },
@@ -251,6 +245,7 @@ export async function buildServer(opts: ServerOptions): Promise<FastifyInstance>
         const { todasPaginas, ...q } = query.parse(req.query ?? {}) as Record<string, unknown> & { todasPaginas?: boolean };
         if (paginada && todasPaginas) return comSessao(() => client.all(ep.id as EndpointId, q as never));
         const { data, meta } = await comSessao(() => client.callWithMeta(ep.id as EndpointId, q as never));
+        reply.header("x-b3-status", String(meta.status));
         if (meta.ajustes.length) reply.header("x-b3-ajustes", JSON.stringify(meta.ajustes));
         if (meta.schemaIssues.length) reply.header("x-b3-divergencias-schema", String(meta.schemaIssues.length));
         if (meta.status === 204) return reply.code(204).send();

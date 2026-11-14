@@ -27,14 +27,14 @@ A coluna **API** é a rota equivalente no servidor deste projeto (`b3 serve`), q
 | ✅ | [`cadastro`](#cadastro) | `/v1/investidor/cadastro` | Dados cadastrais do investidor |
 | ✅ | [`perfil`](#perfil) | `/v1/investidor/perfil` | Perfil do investidor |
 | ✅ | [`menusDisponiveis`](#menusdisponiveis) | `/v1/investidor/menus` | Funcionalidades habilitadas para a conta |
-| 🟡 | [`bridgewiseListaAtivos`](#bridgewiselistaativos) | `/v1/mercado/bridgewise/lista-ativos` | Lista de ativos do Bridgewise |
+| 🟡 | [`bridgewiseListaAtivos`](#bridgewiselistaativos) | `/v1/mercado/bridgewise/lista-ativos` | Ativos da sua carteira que o Bridgewise cobre |
 | ✅ | [`bridgewisePesquisaAtivos`](#bridgewisepesquisaativos) | `/v1/mercado/bridgewise/pesquisa-ativos` | Pesquisa de ativos por nome ou ticker |
 | ✅ | [`bridgewiseCotacao`](#bridgewisecotacao) | `/v1/mercado/bridgewise/cotacao` | Cotação, variações e série de preços do ativo |
 | ✅ | [`bridgewiseDadosAtivo`](#bridgewisedadosativo) | `/v1/mercado/bridgewise/dados-ativo` | Setor, indústria e indicadores do ativo |
 | ✅ | [`bridgewiseDesempenho`](#bridgewisedesempenho) | `/v1/mercado/bridgewise/desempenho` | Desempenho do ativo por trimestre |
 | ✅ | [`bridgewiseComparativo`](#bridgewisecomparativo) | `/v1/mercado/bridgewise/comparativo` | Ativo comparado aos do mesmo setor |
 | ✅ | [`bridgewiseAnaliseFundamentalista`](#bridgewiseanalisefundamentalista) | `/v1/mercado/bridgewise/analise-fundamentalista` | Análise fundamentalista: DRE, fluxo de caixa, balanço, ESG |
-| 🟡 | [`bridgewiseAnaliseTecnica`](#bridgewiseanalisetecnica) | `/v1/mercado/bridgewise/analise-tecnica` | Análise técnica: suporte, resistência e tendência |
+| ✅ | [`bridgewiseAnaliseTecnica`](#bridgewiseanalisetecnica) | `/v1/mercado/bridgewise/analise-tecnica` | Análise técnica: suporte, resistência e tendência |
 | ✅ | [`calcRFTitulosPublicos`](#calcrftitulospublicos) | `/v1/renda-fixa/titulos-publicos` | Títulos públicos (Tesouro) da calculadora de renda fixa |
 | ✅ | [`calcRFTitulosDebentures`](#calcrftitulosdebentures) | `/v1/renda-fixa/debentures` | Debêntures da calculadora de renda fixa |
 | ✅ | [`calcRFTitulosCRA`](#calcrftituloscra) | `/v1/renda-fixa/cra` | CRA da calculadora de renda fixa |
@@ -558,18 +558,41 @@ Resposta:
 
 ### bridgewiseListaAtivos
 
-**Lista de ativos do Bridgewise** — 🟡 campos pendentes
+**Ativos da sua carteira que o Bridgewise cobre** — 🟡 campos pendentes
+
+É a lista que o portal usa no card “Meus ativos”. Mesmo formato de `pesquisa-ativos`, mas só com ativos que você tem.
 
 - B3: `GET /negocio-empresa/api/empresa/v1/bridgewise/lista-ativos`
 - API: `GET /v1/mercado/bridgewise/lista-ativos`
 
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `busca` | string | não | Parte do ticker ou do nome, para filtrar a carteira |
+| `pagina` | integer | não | Página (começa em 1); padrão `1` |
+| `tamanhoPagina` | integer | não | Itens por página |
+
 Observações:
 
-- Responde 204 (sem corpo), com ou sem `pagina`/`tamanho`: o formato da lista não foi visto. Para listar ativos, use `pesquisa-ativos`.
+- Responde 204 (sem corpo) quando a carteira não tem ações, FIIs ou BDRs cobertos: foi o caso da conta de teste, que só tem renda fixa. O formato é o mesmo de `pesquisa-ativos` (a página do portal usa a mesma função para as duas).
 
 Resposta:
 
-- objeto (não mapeado)[]
+- `data`: objeto[]
+  - `totalAtivos`: number
+  - `ativos`: objeto[]
+    - `ticker`: string
+    - `nome`: string
+    - `precoAlvo`: string
+    - `recomendacao`: objeto
+      - `valor`: string
+      - `descricao`: string
+- `links`: objeto
+  - `self`: string
+  - `first`: string
+  - `last`: string
+- `meta`: objeto
+  - `totalRecords`: number
+  - `totalPages`: number
 
 ### bridgewisePesquisaAtivos
 
@@ -581,6 +604,8 @@ Resposta:
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
 | `busca` | string | sim | Parte do ticker ou do nome (ex.: PETR) |
+| `pagina` | integer | não | Página (começa em 1); padrão `1` |
+| `tamanhoPagina` | integer | não | Itens por página |
 
 Resposta:
 
@@ -610,11 +635,13 @@ Resposta:
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `id` | string | sim | Ticker, como devolvido por `pesquisa-ativos` (ex.: PETR3) |
+| `id` | string | sim | Ticker, como devolvido por `pesquisa-ativos` |
+| `periodoCotacao` | string | não | Janela da série de preços (`dadosGrafico`). Padrão da B3: D5 (5 dias) |
 
 Observações:
 
 - O `{id}` da B3 aceita o ticker direto.
+- `periodoCotacao`: D1 (1 dia), D5, M1 (1 mês), M6, YTD (ano até a data), Y1, Y2 e Y5. Outro valor dá 400.
 
 Resposta:
 
@@ -750,7 +777,6 @@ Resposta:
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
 | `id` | string | sim | Ticker (ex.: PETR3) |
-| `periodoCotacao` | string | não | Período da cotação; os valores aceitos ainda não foram mapeados |
 
 Resposta:
 
@@ -790,7 +816,7 @@ Resposta:
 
 ### bridgewiseAnaliseTecnica
 
-**Análise técnica: suporte, resistência e tendência** — 🟡 campos pendentes
+**Análise técnica: suporte, resistência e tendência** — ✅ confirmado
 
 - B3: `GET /negocio-empresa/api/empresa/v1/bridgewise/{id}/analise-tecnica`
 - API: `GET /v1/mercado/bridgewise/analise-tecnica`
@@ -798,11 +824,10 @@ Resposta:
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
 | `id` | string | sim | Ticker (ex.: PETR3) |
-| `periodoCotacao` | string | não | Período da cotação; os valores aceitos ainda não foram mapeados |
 
 Observações:
 
-- Responde 206 (conteúdo parcial). `tendenciaPreco` e `momentosMercado` vieram vazios.
+- A B3 responde 206 (conteúdo parcial) em todos os ativos testados (PETR3, VALE3, ITUB4, BBAS3, MGLU3, WEGE3), e `tendenciaPreco` e `momentosMercado` vêm vazios: o serviço de indicadores técnicos não os entrega. O projeto devolve 200 e o status original no header `x-b3-status`. Os campos dos itens vêm do código do portal e não foram vistos preenchidos.
 
 Resposta:
 
@@ -815,8 +840,16 @@ Resposta:
   - `suporte`: string
   - `resistencia`: string
   - `descricao`: string
-  - `tendenciaPreco`: objeto (não mapeado)[] — Veio vazio nas consultas feitas; campos ainda não mapeados
-  - `momentosMercado`: objeto (não mapeado)[] — Veio vazio nas consultas feitas; campos ainda não mapeados
+  - `tendenciaPreco`: objeto[] — Sempre vazio nas consultas feitas; campos do item conforme o portal
+    - `nomeParametro`: string
+    - `valorParametro`: string | number
+    - `textoScore`: string
+    - `descricaoParametro`: string
+  - `momentosMercado`: objeto[] — Sempre vazio nas consultas feitas; campos do item conforme o portal
+    - `nomeParametro`: string
+    - `valorParametro`: string | number
+    - `textoScore`: string
+    - `descricaoParametro`: string
 - `links`: objeto
   - `self`: string
   - `first`: string

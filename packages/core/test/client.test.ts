@@ -184,14 +184,15 @@ describe("rotas", () => {
     expect(pesquisa.meta.schemaIssues).toEqual([]);
     expect(vistos[0]!.searchParams.get("busca")).toBe("AAAA");
 
-    const cotacao = await c.callWithMeta("bridgewiseCotacao", { id: "AAAA3" });
+    const cotacao = await c.callWithMeta("bridgewiseCotacao", { id: "AAAA3", periodoCotacao: "M1" });
     expect(cotacao.meta.schemaIssues).toEqual([]);
     expect(vistos[1]!.pathname).toMatch(/\/bridgewise\/AAAA3\/cotacao$/);
     expect(vistos[1]!.searchParams.has("id")).toBe(false);
+    expect(vistos[1]!.searchParams.get("periodoCotacao")).toBe("M1");
+    await expect(c.call("bridgewiseCotacao", { id: "AAAA3", periodoCotacao: "XX" as never })).rejects.toThrow();
 
-    const tecnica = await c.callWithMeta("bridgewiseAnaliseTecnica", { id: "AAAA3", periodoCotacao: "1Y" });
+    const tecnica = await c.callWithMeta("bridgewiseAnaliseTecnica", { id: "AAAA3" });
     expect(tecnica.meta.schemaIssues).toEqual([]);
-    expect(vistos[2]!.searchParams.get("periodoCotacao")).toBe("1Y");
   });
 
   it("bridgewise: `id` é obrigatório e a lista de ativos aceita 204", async () => {
