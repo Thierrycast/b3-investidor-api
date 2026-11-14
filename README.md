@@ -27,6 +27,9 @@ Posição, extratos, proventos, cotações e renda fixa. Direto do portal, com a
 
 <br>
 
+> [!NOTE]
+> **Versão 0.1, em desenvolvimento ativo.** Ainda não está publicado no npm: use clonando o repositório, como no [começo rápido](#começo-rápido). As rotas e os campos podem mudar entre versões.
+
 ## Por que existe
 
 O portal da B3 mostra tudo o que você precisa, mas não oferece uma API. Este projeto faz o que o seu navegador faz e entrega o resultado em JSON, documentado:
