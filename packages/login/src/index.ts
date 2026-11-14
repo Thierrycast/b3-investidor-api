@@ -64,6 +64,14 @@ const SUBMIT = [
 /** Tela "Código de autenticação" (observada em 13/11/2026): INPUT_OTP_EMAIL + Btn_VERIFY_CODE. */
 const VERIFY = ["#Btn_VERIFY_CODE", "button:has-text('Verificar')", "button:has-text('Confirmar')"];
 
+/** Botão "Enviar Novo código" da tela do código. Só é clicado quando a pessoa pede (`r`), nunca sozinho. */
+const RESEND = ["button:has-text('Enviar Novo')", "a:has-text('Enviar Novo')", "button:has-text('Reenviar')", "a:has-text('Reenviar')"];
+/** Reenvios seguidos que aceitamos antes de parar (a B3 pode limitar e o último código é o único válido). */
+const MAX_RESENDS = 3;
+
+/** `r`, `reenviar` ou `resend` no lugar do código pedem um novo e-mail à B3. */
+export const isResend = (typed: string) => /^(r|reenviar|resend)$/i.test(typed.trim());
+
 async function launch(headless: boolean, o: LoginOptions): Promise<Browser> {
   if (o.executablePath) return chromium.launch({ headless, executablePath: o.executablePath });
   const channels = o.channel ? [o.channel] : ["chrome", "msedge"];
@@ -241,14 +249,29 @@ async function attempt(headless: boolean, o: LoginOptions): Promise<B3Session> {
         await fill;
         let deadline = Date.now() + (o.headlessTimeoutMs ?? 90_000);
         let asked = 0;
+        let resends = 0;
         while (Date.now() < deadline) {
           const need = await humanNeeded(page);
           if (need?.kind === "codigo" && o.askCode && asked < 3) {
             if (o.debugDir) await dumpStructure(page, o.debugDir, ++shots);
             asked++;
             const typed = await o.askCode(
-              asked === 1 ? "A B3 enviou um código de verificação (veja seu e-mail)" : "A tela do código continua aberta (código recusado ou expirado?); digite o mais recente",
+              resends > 0
+                ? "Novo código pedido à B3 (veja seu e-mail; vale só o mais recente)"
+                : asked === 1
+                  ? "A B3 enviou um código de verificação (veja seu e-mail)"
+                  : "A tela do código continua aberta (código recusado ou expirado?); digite o mais recente",
             );
+            if (isResend(typed)) {
+              if (resends >= MAX_RESENDS) throw new NeedsHuman(`limite de ${MAX_RESENDS} reenvios atingido; aguarde alguns minutos e rode o login de novo`);
+              if (!(await clickVisible(page, RESEND))) throw new NeedsHuman("não achei o botão de reenviar o código");
+              resends++;
+              asked--; // pedir reenvio não gasta uma das tentativas de digitar o código
+              status(`novo código pedido (${resends}/${MAX_RESENDS})`);
+              deadline = Date.now() + (o.headlessTimeoutMs ?? 90_000);
+              await sleep(2000);
+              continue;
+            }
             if (!(await fillCode(page, typed))) throw new NeedsHuman("não achei o campo do código");
             status("código enviado");
             deadline = Date.now() + (o.headlessTimeoutMs ?? 90_000);

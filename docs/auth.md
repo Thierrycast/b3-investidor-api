@@ -87,7 +87,8 @@ Como funciona (`packages/login`):
 2. Manda `doc_hint=<CPF/CNPJ só dígitos>`. Ele é **obrigatório**: sem ele, o B2C responde "An exception has occurred". O B2C usa esse valor para escolher o fluxo; com um valor que não é o seu documento, ele cai na tela de **cadastro**. Por isso o `b3 login` sempre precisa do CPF/CNPJ: do ambiente, do cofre ou digitado na hora.
 3. Preenche CPF, aceita os termos e preenche a senha (se houver).
 4. **Código por e-mail** (tela "Código de autenticação", observada em 13/11/2026): a B3 envia um código de 6 dígitos ao e-mail cadastrado. No terminal, o `b3 login` pede o código (aparece como `******`) e o digita tecla a tecla.
-   O campo visível (`INPUT_OTP_EMAIL`) é uma fachada; a página copia o valor para o campo real do B2C (`VerificationCode`, oculto) em eventos de tecla. Por isso colar de uma vez não funciona. Depois clica só em `Btn_VERIFY_CODE`, nunca em "Enviar Novo código".
+   O campo visível (`INPUT_OTP_EMAIL`) é uma fachada; a página copia o valor para o campo real do B2C (`VerificationCode`, oculto) em eventos de tecla. Por isso colar de uma vez não funciona. Depois clica só em `Btn_VERIFY_CODE`; "Enviar Novo código" só é clicado quando a pessoa pede.
+   **Não chegou ou apagou o e-mail?** Digite `r` (ou `reenviar`) no lugar do código: o login clica em "Enviar Novo código" e pede de novo. Vale só o código mais recente; são no máximo 3 reenvios por login e, passando disso, o comando para.
 5. O redirecionamento final para `https://www.investidor.b3.com.br/?code=…` é lido (qualquer requisição ou navegação para essa origem) e respondido com uma página local "Login concluído". O site não carrega.
 6. Troca o `code` por tokens (`grant_type=authorization_code` + `code_verifier`) e grava a sessão em arquivo 600, ou envia a um servidor com `--push`.
 

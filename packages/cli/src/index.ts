@@ -80,7 +80,7 @@ async function main() {
         senha: cred.senha,
         mode: values.headed ? "headed" : values.headless ? "headless" : "auto",
         // Código de verificação no terminal (só em terminal interativo; senão vai para a janela).
-        askCode: process.stdin.isTTY ? (motivo) => promptHidden(`${motivo}. Código: `) : undefined,
+        askCode: process.stdin.isTTY ? (motivo) => promptHidden(`${motivo}. Código (ou r para reenviar o e-mail): `) : undefined,
         debugDir: values.debug,
         onStatus: (m) => console.error(`· ${m}`),
       });
